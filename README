@@ -1,0 +1,4 @@
+Syscall scripting
+=================
+
+You must have a Linux kernel (>= 4.14) with module support.
