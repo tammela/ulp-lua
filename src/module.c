@@ -12,7 +12,9 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
-/* #include <uapi/linux/ss_lua.h> */
+#include "allocator.h"
+
+/* #include <uapi/linux/ulp_lua.h> */
 #define SS_LUA_LOADSCRIPT      (1)
 #define SS_LUA_ENTRYPOINT      (2)
 #define SS_LUA_RECVBUFFSZ      (3)
@@ -87,6 +89,7 @@ static int sk_init(struct sock *sk)
       return -ENOMEM;
 
    luaL_openlibs(L);
+   lua_setallocf(L, allocator, NULL);
    inet_csk(sk)->icsk_ulp_data = (void *)L;
    area = (struct context **)lua_getextraspace(L);
    *area = ctx;

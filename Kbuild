@@ -12,7 +12,7 @@ subdir-ccflags-y := -I${PWD}/${LUNATIK} \
 	-D'UCHAR_MAX=(255)' \
 	-D'UINT64_MAX=((u64)~0ULL)'
 
-ss-objs := src/ss_module.o \
+ss-objs := src/module.o src/allocator.o \
       ${LUNATIK}/lapi.o ${LUNATIK}/lcode.o \
       ${LUNATIK}/lctype.o ${LUNATIK}/ldebug.o \
       ${LUNATIK}/ldo.o ${LUNATIK}/ldump.o \
