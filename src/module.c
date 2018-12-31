@@ -1,12 +1,10 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/uio.h>
 
 #include <linux/net.h>
 #include <linux/socket.h>
 #include <net/tcp.h>
-#include <net/transp_v6.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -79,13 +77,13 @@ static int sk_init(struct sock *sk)
       return -ENOTSUPP;
 
    ctx = kmalloc(sizeof(struct context), GFP_KERNEL);
-   if (ctx == NULL)
+   if (unlikely(ctx == NULL))
       return -ENOMEM;
 
    ctx->entry[0] = '\0';
 
    L = luaL_newstate();
-   if (L == NULL)
+   if (unlikely(L == NULL))
       return -ENOMEM;
 
    luaL_openlibs(L);
@@ -150,11 +148,11 @@ static int ss_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
 
    skb = skb_peek_tail(&sk->sk_receive_queue);
    hdr = tcp_hdr(skb);
-   if (!hdr->psh)
+   if (unlikely(!hdr->psh))
       goto out;
    lua_pushlstring(L, skb->data, skb->len);
    perr = lua_pcall(L, 1, 1, 0);
-   if (perr) {
+   if (unlikely(perr)) {
       pr_err("%s\n", lua_tostring(L, -1));
       goto out;
    }
@@ -190,8 +188,8 @@ static int ss_setsockopt(struct sock *sk, int level, int optname,
          if (!optval || optlen > SS_SCRIPTSZ)
             return -EINVAL;
 
-         script = kmalloc(optlen, GFP_KERNEL);
-         if (script == NULL)
+         script = vmalloc(optlen);
+         if (unlikely(script == NULL))
             return -ENOMEM;
 
          err = copy_from_user(script, optval, optlen);
@@ -232,8 +230,6 @@ static int ss_setsockopt(struct sock *sk, int level, int optname,
 static int ss_getsockopt(struct sock *sk, int level, int optname,
       char __user *optval, int __user *optlen)
 {
-
-   int err;
 
    if (level != SOL_LUA)
       return sys->getsockopt(sk, level, optname, optval, optlen);
