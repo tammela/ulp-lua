@@ -1,3 +1,9 @@
 [submodule "dependencies/lunatik"]
 	path = dependencies/lunatik
 	url = https://github.com/luainkernel/lunatik.git
+[submodule "luadata"]
+	path = luadata
+	url = https://github.com/lneto/luadata.git
+[submodule "dependencies/luadata"]
+	path = dependencies/luadata
+	url = https://github.com/lneto/luadata.git

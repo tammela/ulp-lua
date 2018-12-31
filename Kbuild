@@ -4,7 +4,6 @@ LUNATIKARCH := dependencies/lunatik/arch
 subdir-ccflags-y := -I${PWD}/${LUNATIK} \
 	-I${PWD}/${LUNATIKUTIL} \
 	-Wall \
-	-g \
 	-D_KERNEL \
 	-D'CHAR_BIT=(8)' \
 	-D'MIN=min' \
@@ -31,4 +30,4 @@ ss-objs := src/module.o src/allocator.o \
       ${LUNATIK}/linit.o \
       ${LUNATIKARCH}/x86_64/setjmp.o
 
-obj-m += ss.o
+obj-m += ss.o dependencies/luadata/
