@@ -10,6 +10,8 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
+#include <luadata.h>
+
 #include "allocator.h"
 
 /* #include <uapi/linux/ulp_lua.h> */
@@ -150,8 +152,9 @@ static int ss_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
    hdr = tcp_hdr(skb);
    if (unlikely(!hdr->psh))
       goto out;
-   lua_pushlstring(L, skb->data, skb->len);
+   data = ldata_newref(L, skb->data, skb->len);
    perr = lua_pcall(L, 1, 1, 0);
+   ldata_unref(L, data);
    if (unlikely(perr)) {
       pr_err("%s\n", lua_tostring(L, -1));
       goto out;
