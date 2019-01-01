@@ -1,0 +1,3 @@
+ulp-lua-objs := module.o allocator.o \
+
+obj-m += ulp-lua.o
