@@ -13,7 +13,7 @@ static void *vrealloc(void *ptr, size_t osize, size_t nsize)
       return NULL;
 
    memcpy(nptr, ptr, osize);
-   vfree(ptr);
+   kvfree(ptr);
 
    return nptr;
 }

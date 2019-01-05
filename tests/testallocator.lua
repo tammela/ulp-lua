@@ -5,7 +5,7 @@
 
 function process()
    local tb = {}
-   for i = 1, 16777216 then
+   for i = 1, 16777216 do
       tb[i] = i
    end
    return false
