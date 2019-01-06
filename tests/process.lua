@@ -2,6 +2,8 @@
 -- parse a http header
 --
 
+data = require'data'
+
 local parse = {}
 
 -- check if the http message is somewhat sane
@@ -43,7 +45,8 @@ function parse.http(s)
 end
 
 function process(buff)
-   local ok, header = parse.http(buff)
+   local buff = buff:layout{str = {0, #buff, "string"}}
+   local ok, header = parse.http(buff.str)
    if ok then
       return true
    end
