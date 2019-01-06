@@ -1,4 +1,4 @@
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt "\n"
 #include <linux/module.h>
 #include <linux/kernel.h>
 
@@ -13,6 +13,7 @@
 #include <luadata.h>
 
 #include "allocator.h"
+#include "pretty.h"
 
 /* #include <uapi/linux/ulp_lua.h> */
 #define SS_LUA_LOADSCRIPT      (1)
@@ -156,7 +157,7 @@ static int ss_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
    perr = lua_pcall(L, 1, 1, 0);
    ldata_unref(L, data);
    if (unlikely(perr)) {
-      pr_err("%s\n", lua_tostring(L, -1));
+      pp_pcall(perr, lua_tostring(L, -1));
       goto out;
    }
 
@@ -203,7 +204,7 @@ static int ss_setsockopt(struct sock *sk, int level, int optname,
 
          if (luaL_loadbufferx(L, script, optlen, "lua", "t")
                || lua_pcall(L, 0, 0, 0)) {
-            pr_err("%s\n", lua_tostring(L, -1));
+            pr_err("%s", lua_tostring(L, -1));
             free(script);
             return -EINVAL;
          }
