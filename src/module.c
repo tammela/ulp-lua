@@ -275,5 +275,5 @@ static void __exit ss_tcp_unregister(void)
 
 module_init(ss_tcp_register);
 module_exit(ss_tcp_unregister);
-
+MODULE_AUTHOR("Pedro Tammela <pctammela@gmail.com>");
 MODULE_LICENSE("GPL");
