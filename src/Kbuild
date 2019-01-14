@@ -1,3 +1,10 @@
-ulp-lua-objs := module.o allocator.o pretty.o \
+ulp-lua-objs := accept.o        \
+                allocator.o     \
+                close.o         \
+                getsockopt.o    \
+                module.o        \
+                pretty.o        \
+                recvmsg.o       \
+                setsockopt.o    \
 
 obj-m += ulp-lua.o

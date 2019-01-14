@@ -1,3 +1,4 @@
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt "\n"
 #include <linux/kernel.h>
 #include <linux/mm.h>
 
