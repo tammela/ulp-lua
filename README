@@ -3,4 +3,7 @@ ULP Lua
 
 An upper layer protocol for Lua scripting.
 
-You must have a Linux kernel (>= 4.14) with module support.
+Since Linux 4.20 the ULP infrastructure has changed.
+Now we require a kernel >= 4.20.
+
+If you wish to use an older version, please backport it.
