@@ -38,3 +38,24 @@ void __pp_pcall(int errnum, const char *msg, const char *file, const char* func,
          break;
    }
 }
+
+void __pp_errno(int errnum, const char *msg, const char *file, const char* func, int line)
+{
+   pr_err(PP_PREFIX" %s", file, line, func, msg);
+   switch (errnum) {
+      case -ENOMEM:
+         pr_err(PP_PREFIX" not enough memory", file, line, func);
+         break;
+      default:
+         pr_err(PP_PREFIX" Unknown error code.", file, line, func);
+         break;
+   }
+}
+
+void __pp_warn(const char *msg, const char *file, const char* func, int line)
+{
+   pr_warn(PP_PREFIX" %s", file, line, func, msg);
+   pr_warn("warnings should never happen and are caused because of "
+         "bad configuration."
+         "please refer to the README for proper configuration");
+}

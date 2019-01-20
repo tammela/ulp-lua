@@ -9,6 +9,7 @@
 #include <lualib.h>
 
 #include "ulp.h"
+#include "pool.h"
 #include "syscalls.h"
 
 void ulp_close(struct sock *sk, long int timeout)
@@ -19,7 +20,7 @@ void ulp_close(struct sock *sk, long int timeout)
    }
 
    if (sk->sk_state == TCP_LISTEN) {
-      lua_close(sk_ulp_data(sk));
+      pool_recycle(sk_ulp_data(sk));
       kfree(sk_ulp_ctx(sk));
    }
 

@@ -3,6 +3,7 @@ ulp-lua-objs := accept.o        \
                 close.o         \
                 getsockopt.o    \
                 module.o        \
+                pool.o          \
                 pretty.o        \
                 recvmsg.o       \
                 setsockopt.o    \

@@ -13,53 +13,42 @@
 #include <luadata.h>
 
 #include "ulp.h"
+#include "pool.h"
 #include "syscalls.h"
 #include "allocator.h"
 #include "pretty.h"
 
-static struct proto new;
+static struct proto newprot;
 
 static void register_funcs(struct proto **skp)
 {
-   new = *sys;
-   new.accept = ulp_accept;
-   new.recvmsg = ulp_recvmsg;
-   new.setsockopt = ulp_setsockopt;
-   new.getsockopt = ulp_getsockopt;
-   new.close = ulp_close;
-   *skp = &new;
+   newprot.accept = ulp_accept;
+   newprot.close = ulp_close;
+   newprot.getsockopt = ulp_getsockopt;
+   newprot.recvmsg = ulp_recvmsg;
+   newprot.setsockopt = ulp_setsockopt;
+
+   pool_init(POOL_INIT_SZ);
+
+   *skp = &newprot;
 }
 
 static int sk_init(struct sock *sk)
 {
-   lua_State *L;
-   struct context *ctx;
-   struct context **area;
-
    if (sk->sk_family != AF_INET)
       return -ENOTSUPP;
 
-   ctx = kmalloc(sizeof(struct context), GFP_KERNEL);
-   if (unlikely(ctx == NULL))
-      return -ENOMEM;
-
-   ctx->entry[0] = '\0';
-
-   L = lua_newstate(allocator, NULL);
-   if (unlikely(L == NULL))
-      return -ENOMEM;
-
-   luaL_openlibs(L);
-   inet_csk(sk)->icsk_ulp_data = (void *)L;
-   area = (struct context **)lua_getextraspace(L);
-   *area = ctx;
    sys = sk->sk_prot;
+
+   /* save the original state */
+   newprot = *(sk->sk_prot);
+
    register_funcs(&sk->sk_prot);
 
    return 0;
 }
 
-static int __ulp_init(struct sock *sk)
+static int ulp_lua_init(struct sock *sk)
 {
    if (sk->sk_state == TCP_ESTABLISHED)
       return -EINVAL;
@@ -69,10 +58,8 @@ static int __ulp_init(struct sock *sk)
 
 static struct tcp_ulp_ops ss_tcpulp_ops __read_mostly = {
    .name          = "lua",
-   .uid           = TCP_ULP_LUA,
-   .user_visible  = true,
    .owner         = THIS_MODULE,
-   .init          = __ulp_init
+   .init          = ulp_lua_init
 };
 
 static int __init modinit(void)
@@ -89,4 +76,5 @@ static void __exit modexit(void)
 module_init(modinit);
 module_exit(modexit);
 MODULE_AUTHOR("Pedro Tammela <pctammela@gmail.com>");
+MODULE_ALIAS_TCP_ULP("lua");
 MODULE_LICENSE("GPL");

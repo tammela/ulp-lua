@@ -6,17 +6,31 @@
 #include <net/tcp.h>
 
 #include "ulp.h"
+#include "pool.h"
+#include "pretty.h"
 #include "syscalls.h"
 
 struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 {
+   lua_State *L;
+   int ret;
    struct sock *reqsk = sys->accept(sk, flags, err, kern);
 
    if (reqsk == NULL)
       return NULL;
 
    try_module_get(THIS_MODULE);
-   inet_csk(reqsk)->icsk_ulp_data = sk_ulp_data(sk);
+
+   if (unlikely(pool_empty())) {
+      ret = pool_resize(pool_size() + 1);
+      if (ret != 0) {
+         pp_errno(ret, "caught errno");
+         return NULL;
+      }
+   }
+
+   L = pool_pop();
+   inet_csk(reqsk)->icsk_ulp_data = L;
 
    return reqsk;
 }

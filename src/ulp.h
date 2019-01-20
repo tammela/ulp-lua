@@ -7,19 +7,11 @@
 
 #include <lua.h>
 #include <lauxlib.h>
-#include <lualib.h>
+
+#include "conf.h"
 
 /* We must define SOL_LUA in /include/linux/socket.h */
 #define SOL_LUA                (999)
-
-/* We must define TCP_ULP_LUA in /include/net/tcp.h */
-#define TCP_ULP_LUA            (2)
-
-/* maximum entry function name size in bytes */
-#define SS_ENTRYSZ             (64)
-
-/* maximum script size in bytes */
-#define SS_SCRIPTSZ            (8192)
 
 /* #include <uapi/linux/ulp_lua.h> */
 #define SS_LUA_LOADSCRIPT      (1)
@@ -27,11 +19,8 @@
 #define SS_LUA_RECVBUFFSZ      (3)
 
 struct context {
-   char entry[SS_ENTRYSZ];
+   char entry[ULP_ENTRYSZ];
 };
-
-/* original system calls */
-static struct proto *sys;
 
 static inline lua_State *sk_ulp_data(struct sock *sk)
 {

@@ -25,7 +25,7 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
          char *script;
          lua_State *L = sk_ulp_data(sk);
 
-         if (!optval || optlen > SS_SCRIPTSZ)
+         if (!optval || optlen > ULP_SCRIPTSZ)
             return -EINVAL;
 
          script = vmalloc(optlen);
@@ -50,7 +50,7 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
       case SS_LUA_ENTRYPOINT: {
          struct context *ctx;
 
-         if (!optval || optlen > SS_ENTRYSZ)
+         if (!optval || optlen > ULP_ENTRYSZ)
             return -EINVAL;
 
          ctx = sk_ulp_ctx(sk);
