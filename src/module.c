@@ -28,8 +28,6 @@ static void register_funcs(struct proto **skp)
    newprot.recvmsg = ulp_recvmsg;
    newprot.setsockopt = ulp_setsockopt;
 
-   pool_init(POOL_INIT_SZ);
-
    *skp = &newprot;
 }
 
@@ -44,6 +42,8 @@ static int sk_init(struct sock *sk)
    newprot = *(sk->sk_prot);
 
    register_funcs(&sk->sk_prot);
+
+   pool_init(POOL_INIT_SZ);
 
    return 0;
 }

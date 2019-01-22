@@ -29,8 +29,7 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
       }
    }
 
-   L = pool_pop();
-   inet_csk(reqsk)->icsk_ulp_data = L;
+   inet_csk(reqsk)->icsk_ulp_data = pool_pop();
 
    return reqsk;
 }

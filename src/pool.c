@@ -65,6 +65,7 @@ static int __pool_del(int n)
    for (i = 0; i < n; i++) {
       entry = list_first_entry(&pool_lst, struct pool_entry, head);
       list_del(&entry->head);
+      lua_close(entry->L);
       kfree(entry);
    }
 
@@ -89,6 +90,7 @@ void pool_exit(void)
    struct pool_entry *bucket;
 
    list_for_each_entry(bucket, &pool_lst, head) {
+      lua_close(bucket->L);
       kfree(bucket);
    }
 }
@@ -124,6 +126,27 @@ void pool_recycle(lua_State *L)
    struct pool_entry *entry = container_of((void *)L, struct pool_entry, L);
 
    list_add(&entry->head, &pool_lst);
+}
+
+int pool_scatter(const char *script, size_t sz)
+{
+   struct pool_entry *bucket;
+   int err = 0;
+
+   list_for_each_entry(bucket, &pool_lst, head) {
+      err = luaL_loadbufferx(bucket->L, script, sz, "lua", "t");
+      if (err)
+         goto bad;
+      err = lua_pcall(bucket->L, 0, 0, 0);
+      if (err)
+         goto bad;
+   }
+
+   return 0;
+
+bad:
+   pp_pcall(err, lua_tostring(bucket->L, -1));
+   return -EINVAL;
 }
 
 lua_State *pool_pop(void)

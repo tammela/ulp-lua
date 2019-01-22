@@ -10,6 +10,8 @@
 #include <lualib.h>
 
 #include "ulp.h"
+#include "pool.h"
+#include "pretty.h"
 #include "syscalls.h"
 
 int ulp_setsockopt(struct sock *sk, int level, int optname,
@@ -23,7 +25,6 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
    switch (optname) {
       case SS_LUA_LOADSCRIPT: {
          char *script;
-         lua_State *L = sk_ulp_data(sk);
 
          if (!optval || optlen > ULP_SCRIPTSZ)
             return -EINVAL;
@@ -38,12 +39,10 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
             return -EFAULT;
          }
 
-         if (luaL_loadbufferx(L, script, optlen, "lua", "t")
-               || lua_pcall(L, 0, 0, 0)) {
-            pr_err("%s", lua_tostring(L, -1));
-            vfree(script);
-            return -EINVAL;
-         }
+         err = pool_scatter((const char *)script, optlen);
+         vfree(script);
+         if (err)
+            return err;
 
          break;
       }

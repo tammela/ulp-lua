@@ -13,6 +13,8 @@ extern int pool_resize(int);
 
 extern void pool_recycle(lua_State *);
 
+extern int pool_scatter(const char *, size_t);
+
 extern lua_State *pool_pop(void);
 
 #endif
