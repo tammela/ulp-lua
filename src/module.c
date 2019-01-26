@@ -43,7 +43,7 @@ static int sk_init(struct sock *sk)
 
    register_funcs(&sk->sk_prot);
 
-   pool_init(POOL_INIT_SZ);
+   pool_init(ULP_POOLSZ);
 
    return 0;
 }

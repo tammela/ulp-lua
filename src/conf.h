@@ -8,6 +8,6 @@
 #define ULP_SCRIPTSZ            (8192)
 
 /* initial lua_State pool size */
-#define POOL_INIT_SZ            (32)
+#define ULP_POOLSZ              (32)
 
 #endif

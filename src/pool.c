@@ -24,7 +24,6 @@ static int __pool_add(int n)
 {
    struct pool_entry *entry;
    struct context *ctx;
-   struct context **area;
    int i;
 
    for (i = 0; i < n; i++) {
@@ -42,10 +41,8 @@ static int __pool_add(int n)
 
       ctx->entry[0] = '\0';
 
+      luaU_setenv(entry->L, ctx, struct context);
       luaL_openlibs(entry->L);
-
-      area = (struct context **)lua_getextraspace(entry->L);
-      *area = ctx;
 
       list_add(&entry->head, &pool_lst);
    }
@@ -87,11 +84,11 @@ int pool_init(int size)
 
 void pool_exit(void)
 {
-   struct pool_entry *bucket;
+   struct pool_entry *bkt;
 
-   list_for_each_entry(bucket, &pool_lst, head) {
-      lua_close(bucket->L);
-      kfree(bucket);
+   list_for_each_entry(bkt, &pool_lst, head) {
+      lua_close(bkt->L);
+      kfree(bkt);
    }
 }
 
@@ -128,16 +125,17 @@ void pool_recycle(lua_State *L)
    list_add(&entry->head, &pool_lst);
 }
 
-int pool_scatter(const char *script, size_t sz)
+int pool_scatter_script(const char *script, size_t sz)
 {
-   struct pool_entry *bucket;
+   struct pool_entry *bkt;
    int err = 0;
 
-   list_for_each_entry(bucket, &pool_lst, head) {
-      err = luaL_loadbufferx(bucket->L, script, sz, "lua", "t");
+   list_for_each_entry(bkt, &pool_lst, head) {
+      err = luaL_loadbufferx(bkt->L, script, sz, "lua", "t");
       if (err)
          goto bad;
-      err = lua_pcall(bucket->L, 0, 0, 0);
+
+      err = lua_pcall(bkt->L, 0, 0, 0);
       if (err)
          goto bad;
    }
@@ -145,8 +143,24 @@ int pool_scatter(const char *script, size_t sz)
    return 0;
 
 bad:
-   pp_pcall(err, lua_tostring(bucket->L, -1));
+   pp_pcall(err, lua_tostring(bkt->L, -1));
    return -EINVAL;
+}
+
+int pool_scatter_entry(const char *entry, size_t sz)
+{
+   struct pool_entry *bkt;
+   struct context *ctx;
+
+   list_for_each_entry(bkt, &pool_lst, head) {
+      ctx = luaU_getenv(bkt->L, struct context);
+      if (!ctx)
+         return -EINVAL;
+
+      memcpy(ctx->entry, entry, sz);
+   }
+
+   return 0;
 }
 
 lua_State *pool_pop(void)

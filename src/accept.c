@@ -12,7 +12,6 @@
 
 struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 {
-   lua_State *L;
    int ret;
    struct sock *reqsk = sys->accept(sk, flags, err, kern);
 

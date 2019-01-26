@@ -39,7 +39,7 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
             return -EFAULT;
          }
 
-         err = pool_scatter((const char *)script, optlen);
+         err = pool_scatter_script((const char *)script, optlen);
          vfree(script);
          if (err)
             return err;
@@ -47,15 +47,25 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
          break;
       }
       case SS_LUA_ENTRYPOINT: {
-         struct context *ctx;
+         char *entry;
 
          if (!optval || optlen > ULP_ENTRYSZ)
             return -EINVAL;
 
-         ctx = sk_ulp_ctx(sk);
-         err = copy_from_user(ctx->entry, optval, optlen);
-         if (unlikely(err))
+         entry = vmalloc(optlen);
+         if (unlikely(entry == NULL))
+            return -ENOMEM;
+
+         err = copy_from_user(entry, optval, optlen);
+         if (unlikely(err)) {
+            vfree(entry);
             return -EFAULT;
+         }
+
+         err = pool_scatter_entry((const char *)entry, optlen);
+         vfree(entry);
+         if (unlikely(err))
+            return err;
 
          break;
       }
