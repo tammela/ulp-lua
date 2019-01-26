@@ -16,12 +16,8 @@ void ulp_close(struct sock *sk, long int timeout)
 {
    if (sk->sk_state == TCP_ESTABLISHED) {
       inet_csk(sk)->icsk_ulp_ops = NULL;
-      module_put(THIS_MODULE);
-   }
-
-   if (sk->sk_state == TCP_LISTEN) {
       pool_recycle(sk_ulp_data(sk));
-      kfree(sk_ulp_ctx(sk));
+      module_put(THIS_MODULE);
    }
 
    sk->sk_prot = sys;

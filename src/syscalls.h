@@ -1,7 +1,7 @@
 #ifndef _SYSCALLS_H
 #define _SYSCALLS_H
 
-static struct proto *sys;
+extern struct proto *sys;
 
 extern struct sock *ulp_accept(struct sock *, int, int *, bool);
 

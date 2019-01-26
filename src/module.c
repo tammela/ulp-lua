@@ -18,6 +18,8 @@
 #include "allocator.h"
 #include "pretty.h"
 
+struct proto *sys;
+
 static struct proto newprot;
 
 static void register_funcs(struct proto **skp)
@@ -36,9 +38,8 @@ static int sk_init(struct sock *sk)
    if (sk->sk_family != AF_INET)
       return -ENOTSUPP;
 
-   sys = sk->sk_prot;
-
    /* save the original state */
+   sys = sk->sk_prot;
    newprot = *(sk->sk_prot);
 
    register_funcs(&sk->sk_prot);
