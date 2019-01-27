@@ -18,7 +18,7 @@ struct pool_entry {
 };
 
 static LIST_HEAD(pool_lst);
-static int poolsz;
+static int poolsz = 0;
 
 static int __pool_add(int n)
 {
@@ -45,6 +45,7 @@ static int __pool_add(int n)
       luaL_openlibs(entry->L);
 
       list_add(&entry->head, &pool_lst);
+      poolsz++;
    }
 
    return 0;
@@ -64,6 +65,7 @@ static int __pool_del(int n)
       list_del(&entry->head);
       lua_close(entry->L);
       kfree(entry);
+      poolsz--;
    }
 
    return 0;
@@ -120,7 +122,10 @@ int pool_resize(int resize)
 
 void pool_recycle(lua_State *L)
 {
-   struct pool_entry *entry = container_of((void *)L, struct pool_entry, L);
+   struct pool_entry *entry = container_of(&L, struct pool_entry, L);
+
+   if (unlikely(entry == NULL))
+	   pr_err("container is NULL!");
 
    list_add(&entry->head, &pool_lst);
 }
