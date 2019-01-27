@@ -17,6 +17,8 @@
 #include <lua5.3/lauxlib.h>
 #include <lua5.3/lualib.h>
 
+#include <luadata.h>
+
 #define raise_err()  \
    ({fprintf(stderr, "%s:%s (%d)", strerror(errno), __func__, __LINE__);})
 
@@ -92,8 +94,9 @@ int main(void)
          return -1;
       }
 
-      lua_pushlstring(L, msg, msgsz);
+      baseref = ldata_newref(L, msg, msgsz);
       err = lua_pcall(L, 1, 1, 0);
+      ldata_unref(L, baseref);
       if (err) {
          printf("%s\n", lua_tostring(L, -1));
          goto out;	      
