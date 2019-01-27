@@ -1,5 +1,6 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt "\n"
 #include <linux/kernel.h>
+#include <linux/spinlock.h>
 #include <linux/list.h>
 #include <linux/slab.h>
 
@@ -12,12 +13,8 @@
 #include "pool.h"
 #include "allocator.h"
 
-struct pool_entry {
-   lua_State *L;
-   struct list_head head;
-};
-
 static LIST_HEAD(pool_lst);
+static DEFINE_SPINLOCK(pool_lock);
 static int poolsz = 0;
 
 static int __pool_add(int n)
@@ -58,12 +55,15 @@ error:
 static int __pool_del(int n)
 {
    struct pool_entry *entry;
+   struct context *ctx;
    int i;
 
    for (i = 0; i < n; i++) {
       entry = list_first_entry(&pool_lst, struct pool_entry, head);
-      list_del(&entry->head);
+      ctx = luaU_getenv(entry->L, struct context);
+      kfree(ctx);
       lua_close(entry->L);
+      list_del(&entry->head);
       kfree(entry);
       poolsz--;
    }
@@ -86,12 +86,7 @@ int pool_init(int size)
 
 void pool_exit(void)
 {
-   struct pool_entry *bkt;
-
-   list_for_each_entry(bkt, &pool_lst, head) {
-      lua_close(bkt->L);
-      kfree(bkt);
-   }
+   __pool_del(poolsz);
 }
 
 int pool_size(void)
@@ -120,14 +115,11 @@ int pool_resize(int resize)
    return 0;
 }
 
-void pool_recycle(lua_State *L)
+void pool_recycle(struct pool_entry *entry)
 {
-   struct pool_entry *entry = container_of(&L, struct pool_entry, L);
-
-   if (unlikely(entry == NULL))
-	   pr_err("container is NULL!");
-
+   spin_lock(&pool_lock);
    list_add(&entry->head, &pool_lst);
+   spin_unlock(&pool_lock);
 }
 
 int pool_scatter_script(const char *script, size_t sz)
@@ -168,12 +160,14 @@ int pool_scatter_entry(const char *entry, size_t sz)
    return 0;
 }
 
-lua_State *pool_pop(void)
+struct pool_entry *pool_pop(void)
 {
-   struct pool_entry *entry =
-      list_first_entry(&pool_lst, struct pool_entry, head);
+   struct pool_entry *entry;
 
+   spin_lock(&pool_lock);
+   entry = list_first_entry(&pool_lst, struct pool_entry, head);
    list_del(&entry->head);
+   spin_unlock(&pool_lock);
 
-   return entry->L;
+   return entry;
 }

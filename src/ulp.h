@@ -8,6 +8,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 
+#include "pool.h"
 #include "conf.h"
 
 /* We must define SOL_LUA in /include/linux/socket.h */
@@ -22,19 +23,19 @@ struct context {
    char entry[ULP_ENTRYSZ];
 };
 
-static inline lua_State *sk_ulp_data(struct sock *sk)
+static inline struct pool_entry *sk_ulp_data(struct sock *sk)
 {
-   return (lua_State *)inet_csk(sk)->icsk_ulp_data;
+   return (struct pool_entry *)inet_csk(sk)->icsk_ulp_data;
 }
 
 static inline struct context *sk_ulp_ctx(struct sock *sk)
 {
-   lua_State *t = sk_ulp_data(sk);
+   lua_State *L = sk_ulp_data(sk)->L;
 
-   if (!t)
+   if (!L)
       return NULL;
 
-   return *(struct context **)lua_getextraspace(t);
+   return *(struct context **)lua_getextraspace(L);
 }
 
 /* Code below taken from NFLua */

@@ -18,7 +18,7 @@
 int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
       int nonblock, int flags, int *addr_len)
 {
-   lua_State *L = sk_ulp_data(sk);
+   lua_State *L = sk_ulp_data(sk)->L;
    struct context *ctx = sk_ulp_ctx(sk);
    int perr = 0;
    int data = LUA_NOREF;
