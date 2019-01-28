@@ -26,6 +26,17 @@ static void do_kmalloc(void)
       if (!ptr)
          pr_err("=== maximum reallocation is %ld ===", (sz >> 1));
    }
+
+   /* some random allocations */
+   ptr = kmalloc(100, GFP_KERNEL);
+   pr_err("=== real size %ld bytes ===", ksize(ptr));
+   kfree(ptr);
+   ptr = kmalloc(200, GFP_KERNEL);
+   pr_err("=== real size %ld bytes ===", ksize(ptr));
+   kfree(ptr);
+   ptr = kmalloc(300, GFP_KERNEL);
+   pr_err("=== real size %ld bytes ===", ksize(ptr));
+   kfree(ptr);
 }
 
 /**
