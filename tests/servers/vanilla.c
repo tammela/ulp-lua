@@ -20,12 +20,22 @@
 #include <luadata.h>
 
 #define raise_err()  \
-   ({fprintf(stderr, "%s:%s (%d)", strerror(errno), __func__, __LINE__);})
+   ({fprintf(stderr, "%s:%s (%d)", strerror(errno), __func__, __LINE__); exit(-1);})
 
-int main(void)
+void print_help(void)
+{
+   printf("Usage: ulp <script> <function>\n");
+}
+
+int main(int argc, char **argv)
 {
    int listener = socket(AF_INET, SOCK_STREAM, 0);
    int err;
+
+   if (argc < 3) {
+      print_help();
+      return -1;
+   }
 
    if (listener == -1)
       raise_err();
@@ -55,14 +65,13 @@ int main(void)
    }
 
    lua_State *L = luaL_newstate();
-   if (L == NULL) {
+   if (L == NULL)
       raise_err();
-      return -1;
-   }
 
    luaL_openlibs(L);
+   lua_gc(L, LUA_GCSETPAUSE, 100);
 
-   if (luaL_dofile(L, "process.lua")) {
+   if (luaL_dofile(L, argv[1])) {
       printf("%s\n", lua_tostring(L, -1));
       return -1;
    }
@@ -73,10 +82,8 @@ int main(void)
       int err;
       int baseref = LUA_NOREF;
       int sock = accept(listener, (struct sockaddr *) &cl, &len);
-      if (sock == -1) {
+      if (sock == -1)
          raise_err();
-         return -1;
-      }
 
       size_t msgsz = recv(sock, msg, 8192, 0);
       if (msgsz == 0)
@@ -88,10 +95,9 @@ int main(void)
          break;
       }
 
-      if (lua_getglobal(L, "process") != LUA_TFUNCTION) {
+      if (lua_getglobal(L, argv[2]) != LUA_TFUNCTION) {
          err = -EINVAL;
          raise_err();
-         return -1;
       }
 
       baseref = ldata_newref(L, msg, msgsz);
@@ -99,9 +105,8 @@ int main(void)
       ldata_unref(L, baseref);
       if (err) {
          printf("%s\n", lua_tostring(L, -1));
-         goto out;	      
+         goto out;
       }
-
 
  out:
       close(sock);

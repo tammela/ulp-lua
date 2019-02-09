@@ -19,12 +19,22 @@
 #define SOL_LUA (999)
 
 #define raise_err()  \
-   ({fprintf(stderr, "%s:%s (%d)", strerror(errno), __func__, __LINE__);})
+   ({fprintf(stderr, "%s:%s (%d)", strerror(errno), __func__, __LINE__); exit(-1);})
 
-int main(void)
+void print_help(void)
+{
+   printf("Usage: ulp <script> <function>\n");
+}
+
+int main(int argc, char **argv)
 {
    int listener = socket(AF_INET, SOCK_STREAM, 0);
    int err;
+
+   if (argc < 3) {
+      print_help();
+      return -1;
+   }
 
    if (listener == -1)
       raise_err();
@@ -48,7 +58,7 @@ int main(void)
       raise_err();
 
 
-   int fd = open("process.lua", O_RDONLY);
+   int fd = open(argv[1], O_RDONLY);
    if (fd == -1)
       raise_err();
 
@@ -60,54 +70,41 @@ int main(void)
 
    lseek(fd, 0, SEEK_SET);
    char *buff = malloc((size_t) sz);
-   if (buff == NULL) {
+   if (buff == NULL)
       raise_err();
-      return -1;
-   }
 
    err = read(fd, buff, sz);
-   if (err == -1) {
+   if (err == -1)
       raise_err();
-      return -1;
-   }
 
    close(fd);
 
    /* setup lua */
    err = setsockopt(listener, SOL_TCP, TCP_ULP, "lua", sizeof("lua"));
-   if (err == -1) {
+   if (err == -1)
       raise_err();
-      return -1;
-   }
 
    /* load scripts to kernel */
    err = setsockopt(listener, SOL_LUA, ULP_LOADSCRIPT, buff, sz);
-   if (err == -1) {
+   if (err == -1)
       raise_err();
-      return -1;
-   }
 
    /* set Lua entry point inside the system call */
-   err = setsockopt(listener, SOL_LUA, ULP_ENTRYPOINT, "process", sizeof("process"));
-   if (err == -1) {
+   err = setsockopt(listener, SOL_LUA, ULP_ENTRYPOINT, argv[2],
+            strnlen(argv[2], 255));
+   if (err == -1)
       raise_err();
-      return -1;
-   }
 
    char *msg = malloc(8192);
-   if (msg == NULL) {
+   if (msg == NULL)
       raise_err();
-      return -1;
-   }
 
    struct sockaddr_in cl;
    socklen_t len;
    while(1) {
       int sock = accept(listener, (struct sockaddr *) &cl, &len);
-      if (sock == -1) {
+      if (sock == -1)
          raise_err();
-         return -1;
-      }
 
       size_t msgsz = recv(sock, msg, 8192, 0);
       if (msgsz == 0) {
@@ -121,7 +118,6 @@ int main(void)
 	   continue;
 	}
         raise_err();
-	break;
       }
 
       close(sock);
