@@ -23,7 +23,7 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
       return sys->setsockopt(sk, level, optname, optval, optlen);
 
    switch (optname) {
-      case SS_LUA_LOADSCRIPT: {
+      case ULP_LOADSCRIPT: {
          char *script;
 
          if (!optval || optlen > ULP_SCRIPTSZ)
@@ -46,7 +46,7 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
 
          break;
       }
-      case SS_LUA_ENTRYPOINT: {
+      case ULP_ENTRYPOINT: {
          char *entry;
 
          if (!optval || optlen > ULP_ENTRYSZ)

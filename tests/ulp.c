@@ -13,9 +13,8 @@
 #include <linux/in.h>
 #include <linux/tcp.h>
 
-#define SS_LUA_LOADSCRIPT       (1)
-#define SS_LUA_ENTRYPOINT       (2)
-#define SS_LUA_RECVBUFFSZ       (3)
+#define ULP_LOADSCRIPT       (1)
+#define ULP_ENTRYPOINT       (2)
 #define SOL_TCP (6)
 #define SOL_LUA (999)
 
@@ -82,14 +81,14 @@ int main(void)
    }
 
    /* load scripts to kernel */
-   err = setsockopt(listener, SOL_LUA, SS_LUA_LOADSCRIPT, buff, sz);
+   err = setsockopt(listener, SOL_LUA, ULP_LOADSCRIPT, buff, sz);
    if (err == -1) {
       raise_err();
       return -1;
    }
 
    /* set Lua entry point inside the system call */
-   err = setsockopt(listener, SOL_LUA, SS_LUA_ENTRYPOINT, "process", sizeof("process"));
+   err = setsockopt(listener, SOL_LUA, ULP_ENTRYPOINT, "process", sizeof("process"));
    if (err == -1) {
       raise_err();
       return -1;

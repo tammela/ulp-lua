@@ -15,9 +15,8 @@
 #define SOL_LUA                (999)
 
 /* #include <uapi/linux/ulp_lua.h> */
-#define SS_LUA_LOADSCRIPT      (1)
-#define SS_LUA_ENTRYPOINT      (2)
-#define SS_LUA_RECVBUFFSZ      (3)
+#define ULP_LOADSCRIPT      (1)
+#define ULP_ENTRYPOINT      (2)
 
 struct context {
    char entry[ULP_ENTRYSZ];
