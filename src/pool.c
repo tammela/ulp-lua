@@ -38,8 +38,10 @@ static int __pool_add(int n)
 
       ctx->entry[0] = '\0';
 
+      /* setup Lua state */
       luaU_setenv(entry->L, ctx, struct context);
       luaL_openlibs(entry->L);
+      lua_gc(entry->L, LUA_GCSETPAUSE, ULP_LUAGCPAUSE);
 
       list_add(&entry->head, &pool_lst);
       poolsz++;
