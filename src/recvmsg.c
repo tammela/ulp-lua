@@ -4,6 +4,7 @@
 #include <linux/net.h>
 #include <linux/socket.h>
 #include <net/tcp.h>
+#include <net/busy_poll.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -24,6 +25,13 @@ int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
    int data = LUA_NOREF;
    struct sk_buff *skb;
    struct tcphdr *hdr;
+
+   if (unlikely(sk->sk_state != TCP_ESTABLISHED))
+      return -ENOTCONN;
+
+   /* busy loop, if we can, while we are waiting for a data rx event */
+   if (sk_can_busy_loop(sk) && skb_queue_empty(&sk->sk_receive_queue))
+      sk_busy_loop(sk, nonblock);
 
    lock_sock(sk);
 
