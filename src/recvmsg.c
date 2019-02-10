@@ -27,26 +27,51 @@ int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
 
    lock_sock(sk);
 
+   /* fastpath to tcp_recvmsg().
+    * we check for flags that are not of our interest and bail out
+    * if we find any.
+    */
+
+   if (unlikely(flags & MSG_ERRQUEUE))
+      goto out;
+
+   if (flags & MSG_OOB)
+      goto out;
+
+   if (flags & MSG_PEEK)
+      goto out;
+
    if (skb_queue_empty(&sk->sk_receive_queue) || !ctx->entry[0])
       goto out;
 
-   if (lua_getglobal(L, ctx->entry) != LUA_TFUNCTION)
+   if (lua_getglobal(L, ctx->entry) != LUA_TFUNCTION) {
+      lua_pop(L, 1);
       goto out;
+   }
 
    skb = skb_peek_tail(&sk->sk_receive_queue);
    hdr = tcp_hdr(skb);
+
+   /* this is an empiric assertion, as data may be received via ACKs as well.
+    * right now we are considering only GRO-on cases, where a typical HTTP
+    * request is reassembled before it arrives here.
+    */
    if (unlikely(!hdr->psh))
       goto out;
+
    data = ldata_newref(L, skb->data, skb->len);
    perr = lua_pcall(L, 1, 1, 0);
    ldata_unref(L, data);
    if (unlikely(perr)) {
       pp_pcall(perr, lua_tostring(L, -1));
+      lua_pop(L, 1);
       goto out;
    }
 
-   if (lua_toboolean(L, -1) == false)
+   if (lua_toboolean(L, -1) == false) {
+      lua_pop(L, 1);
       goto bad;
+   }
 
 out:
    release_sock(sk);
