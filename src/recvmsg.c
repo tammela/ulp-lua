@@ -60,6 +60,12 @@ int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
    skb = skb_peek_tail(&sk->sk_receive_queue);
    hdr = tcp_hdr(skb);
 
+   /* while we don't have sparse buffer pattern matching in Lua,
+    * we have to drop non-linears skbs processing.
+    */
+   if (skb_is_nonlinear(skb))
+      goto out;
+
    /* this is an empiric assertion, as data may be received via ACKs as well.
     * right now we are considering only GRO-on cases, where a typical HTTP
     * request is reassembled before it arrives here.
