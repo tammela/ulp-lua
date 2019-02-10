@@ -10,7 +10,7 @@
 /* initial lua_State pool size */
 #define ULP_POOLSZ              (32)
 
-/* initial lua_State pool size */
+/* initial Lua'a GC pause value */
 #define ULP_LUAGCPAUSE          (100)
 
 #endif

@@ -51,6 +51,10 @@ static int sk_init(struct sock *sk)
 
 static int ulp_lua_init(struct sock *sk)
 {
+   /* the ulp protocol is cloned in the creation
+    * of the request sockets. we assume that the
+    * ulp initializion was done on the listener socket.
+    */
    if (sk->sk_state == TCP_ESTABLISHED)
       return -EINVAL;
 
