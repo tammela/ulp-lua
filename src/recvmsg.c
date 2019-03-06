@@ -94,8 +94,8 @@ int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
       goto out;
 
    /* Lua guarantees some stack space */
-   lua_pushlightuserdata(L, (void *) skb);
    lua_pushcfunction(L, __doprocess);
+   lua_pushlightuserdata(L, (void *) skb);
 
    perr = lua_pcall(L, 1, 1, 0);
    if (perr) {
