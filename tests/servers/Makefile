@@ -9,4 +9,4 @@ ulp:
 	gcc -g -Wall --std=gnu99 -o ulp.out ulp.c -O2
 
 clean:
-	rm -rf vanilla ulp
+	rm -rf *.out

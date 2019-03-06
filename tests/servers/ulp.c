@@ -57,7 +57,6 @@ int main(int argc, char **argv)
    if (err == -1)
       raise_err();
 
-
    int fd = open(argv[1], O_RDONLY);
    if (fd == -1)
       raise_err();
@@ -91,7 +90,7 @@ int main(int argc, char **argv)
 
    /* set Lua entry point inside the system call */
    err = setsockopt(listener, SOL_LUA, ULP_ENTRYPOINT, argv[2],
-            strnlen(argv[2], 255));
+            strnlen(argv[2], 255) + 1);
    if (err == -1)
       raise_err();
 
