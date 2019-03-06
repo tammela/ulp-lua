@@ -1,5 +1,5 @@
 --
--- parse a http header
+-- parse a http header (example)
 --
 
 data = require'data'
