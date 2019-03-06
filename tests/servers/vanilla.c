@@ -24,7 +24,7 @@
 
 void print_help(void)
 {
-   printf("Usage: ulp <script> <function>\n");
+   printf("Usage: vanilla <script> <function>\n");
 }
 
 int main(int argc, char **argv)
