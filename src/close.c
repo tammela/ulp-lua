@@ -14,7 +14,8 @@
 
 void ulp_close(struct sock *sk, long int timeout)
 {
-   if (current->flags & PF_EXITING) {
+   /* clean up the state pool even if killed by a SIGKILL */
+   if (current->flags & PF_EXITING || sk->sk_state == TCP_LISTEN) {
       pool_recycle(sk_ulp_data(sk));
       pool_exit();
       goto out;
