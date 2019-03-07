@@ -4,6 +4,3 @@
 [submodule "dependencies/luadata"]
 	path = dependencies/luadata
 	url = https://github.com/lneto/luadata.git
-[submodule "dependencies/lunatik-hidden"]
-	path = dependencies/lunatik-hidden
-	url = https://github.com/getCUJO/lunatik.git
