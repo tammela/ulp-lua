@@ -33,7 +33,7 @@ Current known limitations are listed below and are intented to be fixed in the
 future.
 
 --> *No* support for fragmented skbs.
---> *No* support for buffer pattern matching.
+--> *No* support for sparse buffer pattern matching.
 --> *No* Lua API for common socket operations.
 --> *No* support for IPv6.
 --> *No* support for udp.
