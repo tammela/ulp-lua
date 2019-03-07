@@ -43,8 +43,9 @@ static int sk_init(struct sock *sk)
    newprot = *(sk->sk_prot);
 
    register_funcs(&sk->sk_prot);
-
    pool_init(ULP_POOLSZ);
+
+   inet_csk(sk)->icsk_ulp_data = NULL;
 
    return 0;
 }

@@ -119,6 +119,9 @@ int pool_resize(int resize)
 
 void pool_recycle(struct pool_entry *entry)
 {
+   if (unlikely(entry == NULL))
+      return;
+
    spin_lock(&pool_lock);
    list_add(&entry->head, &pool_lst);
    spin_unlock(&pool_lock);

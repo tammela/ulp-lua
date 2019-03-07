@@ -14,12 +14,19 @@
 
 void ulp_close(struct sock *sk, long int timeout)
 {
+   if (current->flags & PF_EXITING) {
+      pool_recycle(sk_ulp_data(sk));
+      pool_exit();
+      goto out;
+   }
+
    if (sk->sk_state == TCP_ESTABLISHED) {
       inet_csk(sk)->icsk_ulp_ops = NULL;
       pool_recycle(sk_ulp_data(sk));
       module_put(THIS_MODULE);
    }
 
+out:
    sk->sk_prot = sys;
    inet_csk(sk)->icsk_ulp_data = NULL;
    sys->close(sk, timeout);
