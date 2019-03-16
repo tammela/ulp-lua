@@ -1,5 +1,5 @@
 LUADATA := dependencies/luadata
-LUNATIK := dependencies/lunatik-hidden/lua
+LUNATIK := dependencies/lunatik/lua
 
 subdir-ccflags-y := -I${PWD}/${LUNATIK} \
 	-I${PWD}/${LUADATA} \
@@ -12,4 +12,4 @@ subdir-ccflags-y := -I${PWD}/${LUNATIK} \
 	-D'UCHAR_MAX=(255)' \
 	-D'UINT64_MAX=((u64)~0ULL)'
 
-obj-y += dependencies/lunatik-hidden/ dependencies/luadata/ src/
+obj-y += dependencies/lunatik/ dependencies/luadata/ src/
