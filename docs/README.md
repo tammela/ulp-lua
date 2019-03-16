@@ -9,9 +9,11 @@ we can keep up with the stable Linux release cycle and using pre-compiled
 binaries.
 
 The packages we recommend are:
+```
         build-essentials (make, gcc...)
         command line editor (vim, emacs...)
         git
         sshd
         curl
         netcat
+```
