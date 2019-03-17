@@ -62,7 +62,7 @@ static int ulp_lua_init(struct sock *sk)
    return sk_init(sk);
 }
 
-static struct tcp_ulp_ops ss_tcpulp_ops __read_mostly = {
+static struct tcp_ulp_ops ulp_lua_ops __read_mostly = {
    .name          = "lua",
    .owner         = THIS_MODULE,
    .init          = ulp_lua_init
@@ -70,13 +70,13 @@ static struct tcp_ulp_ops ss_tcpulp_ops __read_mostly = {
 
 static int __init modinit(void)
 {
-   tcp_register_ulp(&ss_tcpulp_ops);
+   tcp_register_ulp(&ulp_lua_ops);
    return 0;
 }
 
 static void __exit modexit(void)
 {
-   tcp_unregister_ulp(&ss_tcpulp_ops);
+   tcp_unregister_ulp(&ulp_lua_ops);
 }
 
 module_init(modinit);
