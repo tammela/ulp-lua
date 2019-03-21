@@ -13,6 +13,7 @@
 struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 {
    int ret;
+   void *ulp_data = inet_csk(reqsk)->icsk_ulp_data;
    struct sock *reqsk = sys->accept(sk, flags, err, kern);
 
    if (reqsk == NULL)
@@ -29,7 +30,7 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
       }
    }
 
-   inet_csk(reqsk)->icsk_ulp_data = pool_pop();
+   inet_csk(reqsk)->icsk_ulp_data = pool_pop(ulp_data);
 
    return reqsk;
 }

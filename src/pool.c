@@ -4,6 +4,8 @@
 #include <linux/list.h>
 #include <linux/slab.h>
 
+#include <net/tls.h>
+
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
@@ -63,10 +65,10 @@ static int __pool_del(int n)
    for (i = 0; i < n; i++) {
       entry = list_first_entry(&pool_lst, struct pool_entry, head);
       ctx = luaU_getenv(entry->L, struct context);
-      kfree(ctx);
       lua_close(entry->L);
       list_del(&entry->head);
       kfree(entry);
+      kfree(ctx);
       poolsz--;
    }
 
@@ -165,12 +167,17 @@ int pool_scatter_entry(const char *entry, size_t sz)
    return 0;
 }
 
-struct pool_entry *pool_pop(void)
+struct pool_entry *pool_pop(void *data)
 {
    struct pool_entry *entry;
 
    spin_lock(&pool_lock);
    entry = list_first_entry(&pool_lst, struct pool_entry, head);
+#ifdef CONFIG_TLS
+   /* we overrite the tls ulp but keep compabilibity */
+   if (data)
+      entry->tc = *(struct tls_context *) data;
+#endif
    list_del(&entry->head);
    spin_unlock(&pool_lock);
 

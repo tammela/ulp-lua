@@ -18,6 +18,7 @@
 #include "allocator.h"
 #include "pretty.h"
 
+/* for original system calls */
 struct proto *sys;
 
 static struct proto newprot;
@@ -44,8 +45,6 @@ static int sk_init(struct sock *sk)
 
    register_funcs(&sk->sk_prot);
    pool_init(ULP_POOLSZ);
-
-   inet_csk(sk)->icsk_ulp_data = NULL;
 
    return 0;
 }
