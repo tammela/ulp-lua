@@ -12,9 +12,11 @@
 
 struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 {
-   int ret;
-   void *ulp_data = inet_csk(reqsk)->icsk_ulp_data;
+   int ret = 0;
    struct sock *reqsk = sys->accept(sk, flags, err, kern);
+#ifdef HAS_TLS
+   const struct tcp_ulp_ops *ops;
+#endif
 
    if (reqsk == NULL)
       return NULL;
@@ -30,7 +32,19 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
       }
    }
 
-   inet_csk(reqsk)->icsk_ulp_data = pool_pop(ulp_data);
+#ifdef HAS_TLS
+   ops = inet_csk(reqsk)->icsk_ulp_ops;
+   /* fake a clean ulp socket */
+   inet_csk(reqsk)->icsk_ulp_ops = NULL;
+   ret = ((int (*)(struct sock *, const char *))addr_tcp_set_ulp)(reqsk, "tls");
+   if (ret) {
+      pp_errno(ret, "caught errno in TLS ulp");
+      *err = ret;
+   }
+   inet_csk(reqsk)->icsk_ulp_ops = ops;
+#endif
+
+   inet_csk(reqsk)->icsk_ulp_data = pool_pop(inet_csk(reqsk)->icsk_ulp_data);
 
    return reqsk;
 }

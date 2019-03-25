@@ -47,6 +47,8 @@ struct context {
    char entry[ULP_ENTRYSZ];
 };
 
+extern unsigned long addr_tcp_set_ulp;
+
 static inline struct pool_entry *sk_ulp_data(struct sock *sk)
 {
    return (struct pool_entry *)inet_csk(sk)->icsk_ulp_data;
