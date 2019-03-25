@@ -16,7 +16,7 @@
 #include "syscalls.h"
 #include "pretty.h"
 
-int __doprocess(lua_State *L)
+static int __doprocess(lua_State *L)
 {
    struct sk_buff *skb = lua_touserdata(L, 1);
    struct context *ctx = luaU_getenv(L, struct context);

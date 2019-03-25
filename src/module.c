@@ -1,6 +1,7 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt "\n"
 #include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/kallsyms.h>
 
 #include <linux/net.h>
 #include <linux/socket.h>
@@ -22,6 +23,11 @@
 struct proto *sys;
 
 static struct proto newprot;
+
+#ifdef HAS_TLS
+/* prefixed addr_ because it's a function address */
+unsigned long addr_tcp_set_ulp;
+#endif
 
 static void register_funcs(struct proto **skp)
 {
@@ -69,8 +75,10 @@ static struct tcp_ulp_ops ulp_lua_ops __read_mostly = {
 
 static int __init modinit(void)
 {
+   addr_tcp_set_ulp = kallsyms_lookup_name("tcp_set_ulp");
    tcp_register_ulp(&ulp_lua_ops);
-   return 0;
+
+   return addr_tcp_set_ulp ? 0 : -EFAULT;
 }
 
 static void __exit modexit(void)

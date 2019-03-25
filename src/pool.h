@@ -2,8 +2,8 @@
 #define _POOL_H
 
 struct pool_entry {
-#ifdef CONFIG_TLS
-   struct tls_context tc; /* always first member! */
+#ifdef HAS_TLS
+   struct tls_context *tc;
 #endif
    lua_State *L;
    struct list_head head;

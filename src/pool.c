@@ -173,10 +173,8 @@ struct pool_entry *pool_pop(void *data)
 
    spin_lock(&pool_lock);
    entry = list_first_entry(&pool_lst, struct pool_entry, head);
-#ifdef CONFIG_TLS
-   /* we overrite the tls ulp but keep compabilibity */
-   if (data)
-      entry->tc = *(struct tls_context *) data;
+#ifdef HAS_TLS
+   entry->tc = data;
 #endif
    list_del(&entry->head);
    spin_unlock(&pool_lock);
