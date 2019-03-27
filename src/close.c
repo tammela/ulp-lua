@@ -14,21 +14,19 @@
 
 void ulp_close(struct sock *sk, long int timeout)
 {
-   /* clean up the state pool even if killed by a SIGKILL */
-   if (current->flags & PF_EXITING || sk->sk_state == TCP_LISTEN) {
-      pool_recycle(sk_ulp_data(sk));
-      pool_exit();
-      goto out;
-   }
+   struct ulp_data *data;
 
-   if (sk->sk_state == TCP_ESTABLISHED) {
+   data = inet_csk(sk)->icsk_ulp_data;
+
+   // next few lines only for debug and will be removed
+   BUG_ON(data == NULL);
+
+   if (data->type == CONNECTION) {
+      // We need to NULL icsk_ulp_ops to prevent module_put call inside tcp_ulp.c in kernel
       inet_csk(sk)->icsk_ulp_ops = NULL;
-      pool_recycle(sk_ulp_data(sk));
-      module_put(THIS_MODULE);
    }
 
-out:
+   sk_cleanup_ulp_data(sk);
    sk->sk_prot = sys;
-   inet_csk(sk)->icsk_ulp_data = NULL;
    sys->close(sk, timeout);
 }

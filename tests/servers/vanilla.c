@@ -29,6 +29,7 @@ void print_help(void)
 
 int main(int argc, char **argv)
 {
+   const char *hello = "Hello from server!";
    int listener = socket(AF_INET, SOCK_STREAM, 0);
    int err;
 
@@ -86,13 +87,17 @@ int main(int argc, char **argv)
          raise_err();
 
       size_t msgsz = recv(sock, msg, 8192, 0);
-      if (msgsz == 0)
+      if (msgsz == 0) {
+         close(sock);
          continue;
+      }
 
       if (msgsz == -1) {
-         close(sock);
+         if (errno == ECONNREFUSED) {
+            close(sock);
+            continue;
+         }
          raise_err();
-         break;
       }
 
       if (lua_getglobal(L, argv[2]) != LUA_TFUNCTION) {
@@ -108,6 +113,8 @@ int main(int argc, char **argv)
          goto out;
       }
 
+      sprintf(msg,"HTTP/1.1 200 OK\r\nServer: vanilla-lua/1.0\r\nContent-Length: %ld\r\nConnection: close\r\nContent-Type: text/plain\r\n\r\n%s", strlen(hello), hello);
+      write(sock,msg,strlen(msg));
  out:
       close(sock);
    }
