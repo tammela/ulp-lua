@@ -28,6 +28,7 @@ void print_help(void)
 
 int main(int argc, char **argv)
 {
+   const char *hello = "Hello from server!";
    int listener = socket(AF_INET, SOCK_STREAM, 0);
    int err;
 
@@ -107,18 +108,24 @@ int main(int argc, char **argv)
 
       size_t msgsz = recv(sock, msg, 8192, 0);
       if (msgsz == 0) {
-	 close(sock);
-	 continue;
+         close(sock);
+         printf("Empty message\n");
+         continue;
       }
 
       if (msgsz == -1) {
-        if (errno == ECONNREFUSED) {
-           close(sock);
-	   continue;
-	}
-        raise_err();
+         if (errno == ECONNREFUSED) {
+            close(sock);
+            printf("ECONNREFUSED\n");
+            continue;
+         }
+         raise_err();
       }
 
+      sprintf(msg,"HTTP/1.1 200 OK\r\nServer: ulp-lua/1.0\r\nContent-Length: %ld\r\nConnection: close\r\nContent-Type: text/plain\r\n\r\n%s", strlen(hello), hello);
+      write(sock,msg,strlen(msg));
+
+      shutdown(sock, SHUT_WR);
       close(sock);
    }
 

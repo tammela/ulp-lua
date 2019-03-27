@@ -18,6 +18,7 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
       char __user *optval, unsigned int optlen)
 {
    int err;
+   struct pool *pool;
 
 #ifdef HAS_TLS
    if (level == SOL_TLS) {
@@ -34,6 +35,9 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
 
    if (level != SOL_LUA)
       return sys->setsockopt(sk, level, optname, optval, optlen);
+
+   pool = sk_listener_ulp_data(sk);
+   BUG_ON(pool == NULL);
 
    switch (optname) {
       case ULP_LOADSCRIPT: {
@@ -52,7 +56,7 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
             return -EFAULT;
          }
 
-         err = pool_scatter_script((const char *)script, optlen);
+         err = pool_scatter_script(pool, (const char *)script, optlen);
          vfree(script);
          if (err)
             return err;
@@ -75,7 +79,7 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
             return -EFAULT;
          }
 
-         err = pool_scatter_entry((const char *)entry, optlen);
+         err = pool_scatter_entry(pool, (const char *)entry, optlen);
          vfree(entry);
          if (unlikely(err))
             return err;

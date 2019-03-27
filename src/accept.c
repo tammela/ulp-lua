@@ -13,6 +13,8 @@
 struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 {
    int ret = 0;
+   struct pool_entry *entry;
+   struct pool *pool = sk_listener_ulp_data(sk);
    struct sock *reqsk = sys->accept(sk, flags, err, kern);
 #ifdef HAS_TLS
    const struct tcp_ulp_ops *ops;
@@ -20,17 +22,6 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 
    if (reqsk == NULL)
       return NULL;
-
-   try_module_get(THIS_MODULE);
-
-   /* this should never happen! */
-   if (unlikely(pool_empty())) {
-      ret = pool_resize(pool_size() + 1);
-      if (ret != 0) {
-         pp_errno(ret, "caught errno");
-         return NULL;
-      }
-   }
 
 #ifdef HAS_TLS
    ops = inet_csk(reqsk)->icsk_ulp_ops;
@@ -44,7 +35,18 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
    inet_csk(reqsk)->icsk_ulp_ops = ops;
 #endif
 
-   inet_csk(reqsk)->icsk_ulp_data = pool_pop(inet_csk(reqsk)->icsk_ulp_data);
+   entry = pool_pop(pool, inet_csk(reqsk)->icsk_ulp_data);
+   if (entry == NULL)
+      goto close;
+
+   ret = sk_set_ulp_data(reqsk, CONNECTION, entry);
+   if (ret) {
+      goto close;
+   }
 
    return reqsk;
+close:
+   inet_csk(reqsk)->icsk_ulp_ops = NULL;
+   sys->close(reqsk, 0);
+   return NULL;
 }

@@ -18,6 +18,7 @@ function parse.requestmethod(s)
    local ok = string.match(s, "^GET")
    if not ok then return end
    local path = string.match(s, "GET (%g+) HTTP")
+   --print(path)
    return path
 end
 
@@ -46,8 +47,14 @@ end
 
 function process(buff)
    local buff = buff:layout{str = {0, #buff, "string"}}
+
    local ok, header = parse.http(buff.str)
+
    if ok then
       return true
+   else
+      print("Rejected buf:")
+      print(buff)
+      print("\n")
    end
 end
