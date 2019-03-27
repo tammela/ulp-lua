@@ -14,8 +14,6 @@ extern int pool_empty(void);
 
 extern int pool_size(void);
 
-extern int pool_resize(int);
-
 extern void pool_recycle(struct pool_entry *);
 
 extern int pool_scatter_script(const char *, size_t);

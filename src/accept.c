@@ -18,17 +18,6 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
    if (reqsk == NULL)
       return NULL;
 
-   try_module_get(THIS_MODULE);
-
-   /* this should never happen! */
-   if (unlikely(pool_empty())) {
-      ret = pool_resize(pool_size() + 1);
-      if (ret != 0) {
-         pp_errno(ret, "caught errno");
-         return NULL;
-      }
-   }
-
    inet_csk(reqsk)->icsk_ulp_data = pool_pop();
 
    return reqsk;

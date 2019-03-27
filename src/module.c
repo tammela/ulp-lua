@@ -43,9 +43,8 @@ static int sk_init(struct sock *sk)
    newprot = *(sk->sk_prot);
 
    register_funcs(&sk->sk_prot);
-   pool_init(ULP_POOLSZ);
 
-   inet_csk(sk)->icsk_ulp_data = NULL;
+   sk_set_ulp_data(sk, NULL);
 
    return 0;
 }
@@ -70,6 +69,7 @@ static struct tcp_ulp_ops ulp_lua_ops __read_mostly = {
 
 static int __init modinit(void)
 {
+   pool_init(ULP_POOLSZ);
    tcp_register_ulp(&ulp_lua_ops);
    return 0;
 }
@@ -77,6 +77,7 @@ static int __init modinit(void)
 static void __exit modexit(void)
 {
    tcp_unregister_ulp(&ulp_lua_ops);
+   pool_exit();
 }
 
 module_init(modinit);

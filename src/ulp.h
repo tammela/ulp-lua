@@ -52,6 +52,11 @@ static inline struct pool_entry *sk_ulp_data(struct sock *sk)
    return (struct pool_entry *)inet_csk(sk)->icsk_ulp_data;
 }
 
+static inline void sk_set_ulp_data(struct sock *sk, struct pool_entry *entry)
+{
+   inet_csk(sk)->icsk_ulp_data = entry;
+}
+
 static inline struct context *sk_ulp_ctx(struct sock *sk)
 {
    lua_State *L = sk_ulp_data(sk)->L;

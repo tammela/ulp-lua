@@ -32,7 +32,7 @@ int __doprocess(lua_State *L)
    if (perr)
       return lua_error(L);
 
-   return 0;
+   return lua_toboolean(L, -1);
 }
 
 int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
@@ -101,7 +101,7 @@ int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
    if (perr) {
       pp_pcall(perr, lua_tostring(L, -1));
       lua_pop(L, 1);
-      goto out;
+      goto bad;
    }
 
    if (lua_toboolean(L, -1) == false) {
