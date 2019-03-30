@@ -47,19 +47,76 @@ struct context {
    char entry[ULP_ENTRYSZ];
 };
 
-static inline struct pool_entry *sk_ulp_data(struct sock *sk)
+typedef enum {
+   LISTENER = 55,
+   CONNECTION = 77
+} ulp_data_type;
+
+struct ulp_data {
+   ulp_data_type type;
+   union {
+      struct pool_entry *entry;
+      struct pool *pool;
+   } data;
+};
+
+static inline int sk_set_ulp_data(struct sock *sk, ulp_data_type type, void *data)
 {
-   return (struct pool_entry *)inet_csk(sk)->icsk_ulp_data;
+   struct ulp_data *ulp_data;
+
+   ulp_data = kmalloc(sizeof(struct ulp_data), GFP_KERNEL);
+   if (unlikely(data == NULL))
+      return -ENOMEM;
+
+   ulp_data->type = type;
+
+   if (type == LISTENER)
+      ulp_data->data.pool = data;
+   else
+      ulp_data->data.entry = data;
+
+   inet_csk(sk)->icsk_ulp_data = ulp_data;
+
+   return 0;
 }
 
-static inline void sk_set_ulp_data(struct sock *sk, struct pool_entry *entry)
+static inline void sk_cleanup_ulp_data(struct sock *sk)
 {
-   inet_csk(sk)->icsk_ulp_data = entry;
+   struct ulp_data *data = inet_csk(sk)->icsk_ulp_data;
+   WARN_ON(data == NULL);
+   if (unlikely(data == NULL))
+      return;
+
+   if (data->type == LISTENER)
+      pool_exit(data->data.pool);
+   else if (data->type == CONNECTION)
+      pool_recycle(data->data.entry);
+   else
+      WARN_ON(true);
+
+   inet_csk(sk)->icsk_ulp_data = NULL;
+   kfree(data);
+}
+
+static inline struct pool_entry *sk_conn_ulp_data(struct sock *sk)
+{
+   struct ulp_data *data = inet_csk(sk)->icsk_ulp_data;
+   BUG_ON(data == NULL);
+   WARN_ON(data->type != CONNECTION);
+   return data->data.entry;
+}
+
+static inline struct pool *sk_listener_ulp_data(struct sock *sk)
+{
+   struct ulp_data *data = inet_csk(sk)->icsk_ulp_data;
+   BUG_ON(data == NULL);
+   WARN_ON(data->type != LISTENER);
+   return data->data.pool;
 }
 
 static inline struct context *sk_ulp_ctx(struct sock *sk)
 {
-   lua_State *L = sk_ulp_data(sk)->L;
+   lua_State *L = sk_conn_ulp_data(sk)->L;
 
    if (!L)
       return NULL;

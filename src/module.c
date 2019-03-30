@@ -35,6 +35,7 @@ static void register_funcs(struct proto **skp)
 
 static int sk_init(struct sock *sk)
 {
+   struct pool *pool;
    if (sk->sk_family != AF_INET)
       return -ENOTSUPP;
 
@@ -44,9 +45,11 @@ static int sk_init(struct sock *sk)
 
    register_funcs(&sk->sk_prot);
 
-   sk_set_ulp_data(sk, NULL);
+   pool = pool_init(ULP_POOLSZ);
+   if (pool == NULL)
+      return -ENOMEM;
 
-   return 0;
+   return sk_set_ulp_data(sk, LISTENER, pool);
 }
 
 static int ulp_lua_init(struct sock *sk)
@@ -69,7 +72,6 @@ static struct tcp_ulp_ops ulp_lua_ops __read_mostly = {
 
 static int __init modinit(void)
 {
-   pool_init(ULP_POOLSZ);
    tcp_register_ulp(&ulp_lua_ops);
    return 0;
 }
@@ -77,7 +79,6 @@ static int __init modinit(void)
 static void __exit modexit(void)
 {
    tcp_unregister_ulp(&ulp_lua_ops);
-   pool_exit();
 }
 
 module_init(modinit);

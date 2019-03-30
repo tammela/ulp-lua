@@ -13,23 +13,23 @@
 #include "pool.h"
 #include "allocator.h"
 
-static LIST_HEAD(pool_lst);
-static DEFINE_SPINLOCK(pool_lock);
-static int poolsz = 0;
+//static LIST_HEAD(pools_lst);
+//static DEFINE_SPINLOCK(pools_lock);
+//static int poolsz = 0;
 
-static inline void __pool_list_add(struct list_head *new)
+static inline void __pool_list_add(struct pool *pool, struct list_head *new)
 {
-   list_add(new, &pool_lst);
-   poolsz++;
+   list_add(new, &pool->list);
+   pool->size++;
 }
 
-static inline void __pool_list_del(struct list_head *entry)
+static inline void __pool_list_del(struct pool *pool, struct list_head *entry)
 {
    list_del(entry);
-   poolsz--;
+   pool->size--;
 }
 
-static int __pool_add(int n)
+static int __pool_add(struct pool *pool, int n)
 {
    struct pool_entry *entry;
    struct context *ctx;
@@ -39,6 +39,8 @@ static int __pool_add(int n)
       entry = kmalloc(sizeof(struct pool_entry), GFP_KERNEL);
       if (unlikely(entry == NULL))
          goto error;
+
+      entry->pool = pool;
 
       entry->L = lua_newstate(allocator, NULL);
       if (unlikely(entry->L == NULL)) {
@@ -60,94 +62,100 @@ static int __pool_add(int n)
       luaL_openlibs(entry->L);
       lua_gc(entry->L, LUA_GCSETPAUSE, ULP_LUAGCPAUSE);
 
-      __pool_list_add(&entry->head);
+      __pool_list_add(pool, &entry->head);
    }
 
    return 0;
 
 error:
-   pool_exit();
    return -ENOMEM;
 }
 
-static int __pool_del(int n)
+static int __pool_del(struct pool *pool, int n)
 {
    struct pool_entry *entry;
    struct context *ctx;
    int i;
 
-   BUG_ON(n > poolsz);
+   BUG_ON(n > pool->size);
 
    for (i = 0; i < n; i++) {
-      entry = list_first_entry(&pool_lst, struct pool_entry, head);
-      BUG_ON(list_empty(&pool_lst));
+      entry = list_first_entry(&pool->list, struct pool_entry, head);
+      BUG_ON(list_empty(&pool->list));
       ctx = luaU_getenv(entry->L, struct context);
       kfree(ctx);
       lua_close(entry->L);
-      __pool_list_del(&entry->head);
+      __pool_list_del(pool, &entry->head);
       kfree(entry);
    }
 
    return 0;
 }
 
-int pool_init(int size)
+struct pool *pool_init(int size)
 {
    int err;
+   struct pool *pool;
 
-   spin_lock(&pool_lock);
+   pool = kmalloc(sizeof(struct pool), GFP_KERNEL);
+   if (unlikely(pool == NULL))
+      return NULL;
 
-   BUG_ON(poolsz != 0);
+   INIT_LIST_HEAD(&pool->list);
+   pool->size = 0;
+   spin_lock_init(&pool->lock);
 
-   err = __pool_add(size);
-   if (unlikely(err != 0))
-      goto exit;
+   err = __pool_add(pool, size);
+   if (unlikely(err != 0)) {
+      kfree(pool);
+      return NULL;
+   }
 
-   BUG_ON(poolsz != size);
-
-exit:
-   spin_unlock(&pool_lock);
-   return err;
+   return pool;
 }
 
-void pool_exit(void)
+void pool_exit(struct pool *pool)
 {
-   spin_lock(&pool_lock);
-   __pool_del(poolsz);
-   spin_unlock(&pool_lock);
+   //spin_lock(&pool->lock);
+   __pool_del(pool, pool->size);
+   //spin_unlock(&pool->lock);
+   kfree(pool);
 }
 
-int pool_size(void)
+int pool_size(struct pool *pool)
 {
-   return poolsz;
+   return pool->size;
 }
 
-int pool_empty(void)
+int pool_empty(struct pool *pool)
 {
-   return list_empty(&pool_lst);
+   return list_empty(&pool->list);
 }
 
-static int pool_resize(int resize)
+void pool_lock(struct pool *pool)
 {
-   int err = 0;
+   spin_lock(&pool->lock);
+}
 
+void pool_unlock(struct pool *pool)
+{
+   spin_unlock(&pool->lock);
+}
+
+int pool_resize(struct pool *pool, int resize)
+{
    pp_warn("resizing pool");
 
-   if (unlikely(resize == poolsz))
-      goto exit;
+   if (unlikely(resize == pool->size))
+      return 0;
 
-   if (resize > poolsz) {
-      err = __pool_add(resize - poolsz);
-      goto exit;
-   }
+   if (resize > pool->size)
+      return __pool_add(pool, resize - pool->size);
 
-   if (resize < poolsz) {
-      err = __pool_del(poolsz - resize);
-      goto exit;
-   }
+   if (resize < pool->size)
+      return __pool_del(pool, pool->size - resize);
 
-exit:
-   return err;
+   return 0;
 }
 
 void pool_recycle(struct pool_entry *entry)
@@ -155,24 +163,24 @@ void pool_recycle(struct pool_entry *entry)
    if (unlikely(entry == NULL))
       return;
 
-   spin_lock(&pool_lock);
-   __pool_list_add(&entry->head);
+   spin_lock(&entry->pool->lock);
+   __pool_list_add(entry->pool, &entry->head);
 /*
-   if (poolsz > 2 * ULP_POOLSZ) {
+   if (pool->size > 2 * ULP_POOLSZ) {
       pool_resize(ULP_POOLSZ);
    }
 */
-   spin_unlock(&pool_lock);
+   spin_unlock(&entry->pool->lock);
 }
 
-int pool_scatter_script(const char *script, size_t sz)
+int pool_scatter_script(struct pool *pool, const char *script, size_t sz)
 {
    struct pool_entry *bkt;
    int err = 0;
 
-   spin_lock(&pool_lock);
+   spin_lock(&pool->lock);
 
-   list_for_each_entry(bkt, &pool_lst, head) {
+   list_for_each_entry(bkt, &pool->list, head) {
       err = luaL_loadbufferx(bkt->L, script, sz, "lua", "t");
       if (err)
          goto bad;
@@ -182,24 +190,24 @@ int pool_scatter_script(const char *script, size_t sz)
          goto bad;
    }
 
-   spin_unlock(&pool_lock);
+   spin_unlock(&pool->lock);
    return 0;
 
 bad:
    pp_pcall(err, lua_tostring(bkt->L, -1));
-   spin_unlock(&pool_lock);
+   spin_unlock(&pool->lock);
    return -EINVAL;
 }
 
-int pool_scatter_entry(const char *entry, size_t sz)
+int pool_scatter_entry(struct pool *pool, const char *entry, size_t sz)
 {
    struct pool_entry *bkt;
    struct context *ctx;
    int err = 0;
 
-   spin_lock(&pool_lock);
+   spin_lock(&pool->lock);
 
-   list_for_each_entry(bkt, &pool_lst, head) {
+   list_for_each_entry(bkt, &pool->list, head) {
       ctx = luaU_getenv(bkt->L, struct context);
       if (!ctx) {
          err = -EINVAL;
@@ -210,32 +218,26 @@ int pool_scatter_entry(const char *entry, size_t sz)
    }
 
 exit:
-   spin_unlock(&pool_lock);
+   spin_unlock(&pool->lock);
    return err;
 }
 
-struct pool_entry *pool_pop(void)
+struct pool_entry *pool_pop(struct pool *pool)
 {
    struct pool_entry *entry;
-   int ret;
+   //int ret;
 
-   spin_lock(&pool_lock);
+   spin_lock(&pool->lock);
 
-   /* this should never happen! */
-   if (unlikely(pool_empty())) {
-      BUG_ON(pool_empty() && (pool_size() != 0));
-      ret = pool_resize(pool_size() + ULP_POOLSZ);
-      if (ret != 0) {
-         pp_errno(ret, "caught errno");
-         return NULL;
-      }
+   if (unlikely(pool_empty(pool))) {
+      spin_unlock(&pool->lock);
+      return NULL;
    }
 
-   BUG_ON(poolsz == 0);
-   entry = list_first_entry(&pool_lst, struct pool_entry, head);
-   __pool_list_del(&entry->head);
+   entry = list_first_entry(&pool->list, struct pool_entry, head);
+   __pool_list_del(pool, &entry->head);
 
-   spin_unlock(&pool_lock);
+   spin_unlock(&pool->lock);
 
    return entry;
 }

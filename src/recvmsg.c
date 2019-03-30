@@ -32,14 +32,14 @@ int __doprocess(lua_State *L)
    if (perr)
       return lua_error(L);
 
-   return lua_toboolean(L, -1);
+   return 1;//lua_toboolean(L, -1);
 }
 
 int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
       int nonblock, int flags, int *addr_len)
 {
    struct tcp_sock *tp = tcp_sk(sk);
-   lua_State *L = sk_ulp_data(sk)->L;
+   lua_State *L = sk_conn_ulp_data(sk)->L;
    struct context *ctx = sk_ulp_ctx(sk);
    struct sk_buff *skb;
    struct tcphdr *hdr;
@@ -101,7 +101,7 @@ int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
    if (perr) {
       pp_pcall(perr, lua_tostring(L, -1));
       lua_pop(L, 1);
-      goto bad;
+      goto out;
    }
 
    if (lua_toboolean(L, -1) == false) {
