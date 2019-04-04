@@ -44,6 +44,10 @@ int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
    struct sk_buff *skb;
    struct tcphdr *hdr;
    int perr;
+#ifdef HAS_TLS
+   int chunk;
+   bool zc = false;
+#endif
 
    if (unlikely(sk->sk_state != TCP_ESTABLISHED))
       return -ENOTCONN;
@@ -75,6 +79,12 @@ int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
       goto out;
 
    skb = skb_peek_tail(&sk->sk_receive_queue);
+
+#ifdef HAS_TLS
+   (int (*)(struct sock *, struct sk_buff *, struct iov_iter *,
+            struct scatterlist *, int *, bool *) addr_decrypt_internal)
+         (sk, skb, NULL, NULL, &chunk, &zc);
+#endif
 
    /* while we don't have sparse buffer pattern matching in Lua,
     * we have to drop non-linears skbs processing.
