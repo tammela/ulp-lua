@@ -1,7 +1,7 @@
 ULP Lua
 ========
 
-##Setup
+## Setup
 
 We recommend a Linux setup with QEMU+KVM and virt-manager. You may still use vagrant
 for automatically setting up the virtual machine and the environment.
