@@ -22,10 +22,12 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
 #ifdef HAS_TLS
    if (level == SOL_TLS) {
       void *ptr = sk_ulp_data(sk);
+
       inet_csk(sk)->icsk_ulp_data = ((struct pool_entry *) ptr)->tc;
       err = sys->setsockopt(sk, level, optname, optval, optlen);
       /* restore our context */
       inet_csk(sk)->icsk_ulp_data = ptr;
+
       return err;
    }
 #endif

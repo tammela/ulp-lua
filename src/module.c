@@ -27,6 +27,7 @@ static struct proto newprot;
 #ifdef HAS_TLS
 /* prefixed addr_ because it's a function address */
 unsigned long addr_tcp_set_ulp;
+unsigned long addr_skb_decrypt;
 #endif
 
 static void register_funcs(struct proto **skp)
@@ -76,9 +77,10 @@ static struct tcp_ulp_ops ulp_lua_ops __read_mostly = {
 static int __init modinit(void)
 {
    addr_tcp_set_ulp = kallsyms_lookup_name("tcp_set_ulp");
+   addr_skb_decrypt = kallsyms_lookup_name("decrypt_skb");
    tcp_register_ulp(&ulp_lua_ops);
 
-   return addr_tcp_set_ulp ? 0 : -EFAULT;
+   return (addr_tcp_set_ulp || addr_skb_decrypt) ? 0 : -EFAULT;
 }
 
 static void __exit modexit(void)
