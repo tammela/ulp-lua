@@ -60,6 +60,11 @@ struct ulp_data {
    } data;
 };
 
+/*
+ * We will remove ulp_data when will be confident
+ * that we can distinguish listener socket
+ * from connection socket only by sk_state field
+ */
 static inline int sk_set_ulp_data(struct sock *sk, ulp_data_type type, void *data)
 {
    struct ulp_data *ulp_data;
@@ -102,7 +107,7 @@ static inline struct pool_entry *sk_conn_ulp_data(struct sock *sk)
 {
    struct ulp_data *data = inet_csk(sk)->icsk_ulp_data;
    BUG_ON(data == NULL);
-   WARN_ON(data->type != CONNECTION);
+   BUG_ON(data->type != CONNECTION);
    return data->data.entry;
 }
 
@@ -110,7 +115,7 @@ static inline struct pool *sk_listener_ulp_data(struct sock *sk)
 {
    struct ulp_data *data = inet_csk(sk)->icsk_ulp_data;
    BUG_ON(data == NULL);
-   WARN_ON(data->type != LISTENER);
+   BUG_ON(data->type != LISTENER);
    return data->data.pool;
 }
 

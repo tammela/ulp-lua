@@ -122,7 +122,7 @@ int main(int argc, char **argv)
          raise_err();
       }
 
-      sprintf(msg,"HTTP/1.1 200 OK\nServer: ulp-lua/1.0\nContent-Length: %ld\nConnection: close\nContent-Type: text/plain\n\n%s", strlen(hello), hello);
+      sprintf(msg,"HTTP/1.1 200 OK\r\nServer: ulp-lua/1.0\r\nContent-Length: %ld\r\nConnection: close\r\nContent-Type: text/plain\r\n\r\n%s", strlen(hello), hello);
       write(sock,msg,strlen(msg));
 
       shutdown(sock, SHUT_WR);

@@ -13,10 +13,6 @@
 #include "pool.h"
 #include "allocator.h"
 
-//static LIST_HEAD(pools_lst);
-//static DEFINE_SPINLOCK(pools_lock);
-//static int poolsz = 0;
-
 static inline void __pool_list_add(struct pool *pool, struct list_head *new)
 {
    list_add(new, &pool->list);

@@ -14,22 +14,24 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 {
    int ret;
    struct pool_entry *entry;
-   struct pool *pool = sk_listener_ulp_data(sk);
-   struct sock *reqsk = sys->accept(sk, flags, err, kern);
+   struct pool *pool;
+   struct sock *reqsk;
+
+   pool = sk_listener_ulp_data(sk);
+   reqsk = sys->accept(sk, flags, err, kern);
 
    if (reqsk == NULL)
       return NULL;
 
-   try_module_get(THIS_MODULE);
-
    /* this should never happen! */
+
    pool_lock(pool);
    if (unlikely(pool_empty(pool))) {
       ret = pool_resize(pool, pool_size(pool) + 1);
       if (ret != 0) {
          pp_errno(ret, "caught errno");
          pool_unlock(pool);
-         return NULL;
+         goto close;
       }
    }
    pool_unlock(pool);
@@ -37,13 +39,19 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
    entry = pool_pop(pool);
    WARN_ON(entry == NULL);
    if (entry == NULL)
-      return NULL;
+      goto close;
 
    ret = sk_set_ulp_data(reqsk, CONNECTION, entry);
    if (ret) {
-      sys->close(reqsk, 0);
-      reqsk = NULL;
+      goto close;
    }
 
+   try_module_get(THIS_MODULE);
+
    return reqsk;
+close:
+   BUG_ON(true);
+   inet_csk(reqsk)->icsk_ulp_ops = NULL;
+   sys->close(reqsk, 0);
+   return NULL;
 }
