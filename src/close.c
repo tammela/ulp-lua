@@ -14,19 +14,14 @@
 
 void ulp_close(struct sock *sk, long int timeout)
 {
-   struct ulp_data *data;
-
-   data = inet_csk(sk)->icsk_ulp_data;
-
-   // next few lines only for debug and will be removed
-   BUG_ON(data == NULL);
-
-   if (data->type == CONNECTION) {
-      // We need to NULL icsk_ulp_ops to prevent module_put call inside tcp_ulp.c in kernel
+   /* We need to NULL icsk_ulp_ops to prevent module_put call
+    * inside tcp_ulp.c.
+    */
+   if (sk->sk_state != TCP_LISTEN)
       inet_csk(sk)->icsk_ulp_ops = NULL;
-   }
 
    sk_cleanup_ulp_data(sk);
    sk->sk_prot = sys;
+
    sys->close(sk, timeout);
 }
