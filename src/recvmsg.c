@@ -51,7 +51,7 @@ int ulp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
       int nonblock, int flags, int *addr_len)
 {
    struct tcp_sock *tp = tcp_sk(sk);
-   lua_State *L = sk_conn_ulp_data(sk)->L;
+   lua_State *L = sk_ulp_data(sk)->L;
    struct context *ctx = sk_ulp_ctx(sk);
    struct sk_buff *skb;
    struct tcphdr *hdr;

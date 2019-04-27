@@ -44,6 +44,7 @@ static void register_funcs(struct proto **skp)
 static int sk_init(struct sock *sk)
 {
    struct pool *pool;
+
    if (sk->sk_family != AF_INET)
       return -ENOTSUPP;
 
@@ -57,7 +58,9 @@ static int sk_init(struct sock *sk)
    if (pool == NULL)
       return -ENOMEM;
 
-   return sk_set_ulp_data(sk, LISTENER, pool);
+   inet_csk(sk)->icsk_ulp_data = pool;
+
+   return 0;
 }
 
 static int ulp_lua_init(struct sock *sk)

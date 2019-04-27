@@ -50,82 +50,29 @@ struct context {
 extern unsigned long addr_tcp_set_ulp;
 
 static inline struct pool_entry *sk_ulp_data(struct sock *sk)
-
-typedef enum {
-   LISTENER = 1,
-   CONNECTION
-} ulp_data_type;
-
-struct ulp_data {
-   ulp_data_type type;
-   union {
-      struct pool_entry *entry;
-      struct pool *pool;
-   } data;
-};
-
-/*
- * We will remove ulp_data when will be confident
- * that we can distinguish listener socket
- * from connection socket only by sk_state field
- */
-static inline int sk_set_ulp_data(struct sock *sk, ulp_data_type type, void *data)
 {
-   struct ulp_data *ulp_data;
-
-   ulp_data = kmalloc(sizeof(struct ulp_data), GFP_KERNEL);
-   if (unlikely(ulp_data == NULL))
-      return -ENOMEM;
-
-   ulp_data->type = type;
-
-   if (type == LISTENER)
-      ulp_data->data.pool = data;
-   else
-      ulp_data->data.entry = data;
-
-   inet_csk(sk)->icsk_ulp_data = ulp_data;
-
-   return 0;
+   return (struct pool_entry *)inet_csk(sk)->icsk_ulp_data;
 }
 
 static inline void sk_cleanup_ulp_data(struct sock *sk)
 {
-   struct ulp_data *data = inet_csk(sk)->icsk_ulp_data;
-   WARN_ON(data == NULL);
-   if (unlikely(data == NULL))
+   struct pool_entry *entry = sk_ulp_data(sk);
+
+   if (unlikely(entry == NULL))
       return;
 
-   if (data->type == LISTENER)
-      pool_exit(data->data.pool);
-   else if (data->type == CONNECTION)
-      pool_recycle(data->data.entry);
+   /* listener */
+   if (sk->sk_state == TCP_LISTEN)
+      pool_exit(entry->pool);
    else
-      BUG_ON(true);
+      pool_recycle(entry);
 
    inet_csk(sk)->icsk_ulp_data = NULL;
-   kfree(data);
-}
-
-static inline struct pool_entry *sk_conn_ulp_data(struct sock *sk)
-{
-   struct ulp_data *data = inet_csk(sk)->icsk_ulp_data;
-   BUG_ON(data == NULL);
-   BUG_ON(data->type != CONNECTION);
-   return data->data.entry;
-}
-
-static inline struct pool *sk_listener_ulp_data(struct sock *sk)
-{
-   struct ulp_data *data = inet_csk(sk)->icsk_ulp_data;
-   BUG_ON(data == NULL);
-   BUG_ON(data->type != LISTENER);
-   return data->data.pool;
 }
 
 static inline struct context *sk_ulp_ctx(struct sock *sk)
 {
-   lua_State *L = sk_conn_ulp_data(sk)->L;
+   lua_State *L = sk_ulp_data(sk)->L;
 
    if (!L)
       return NULL;

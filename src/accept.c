@@ -14,14 +14,14 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 {
    int ret = 0;
    struct pool_entry *entry;
-   struct pool *pool = sk_listener_ulp_data(sk);
+   struct pool *pool = inet_csk(sk)->icsk_ulp_data;
    struct sock *reqsk = sys->accept(sk, flags, err, kern);
 #ifdef HAS_TLS
    const struct tcp_ulp_ops *ops;
 #endif
 
    if (reqsk == NULL)
-      return NULL;
+      goto out;
 
 #ifdef HAS_TLS
    ops = inet_csk(reqsk)->icsk_ulp_ops;
@@ -31,22 +31,20 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
    if (ret) {
       pp_errno(ret, "caught errno in TLS ulp");
       *err = ret;
+      goto out;
    }
+
    inet_csk(reqsk)->icsk_ulp_ops = ops;
 #endif
 
    entry = pool_pop(pool, inet_csk(reqsk)->icsk_ulp_data);
-   if (entry == NULL)
-      goto close;
-
-   ret = sk_set_ulp_data(reqsk, CONNECTION, entry);
-   if (ret) {
-      goto close;
+   if (unlikely(entry == NULL)) {
+      pp_warn("pool is empty?");
+      inet_csk(reqsk)->icsk_ulp_data = NULL;
+      goto out;
    }
 
+   inet_csk(reqsk)->icsk_ulp_data = entry;
+out:
    return reqsk;
-close:
-   inet_csk(reqsk)->icsk_ulp_ops = NULL;
-   sys->close(reqsk, 0);
-   return NULL;
 }

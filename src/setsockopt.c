@@ -36,8 +36,7 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
    if (level != SOL_LUA)
       return sys->setsockopt(sk, level, optname, optval, optlen);
 
-   pool = sk_listener_ulp_data(sk);
-   BUG_ON(pool == NULL);
+   pool = inet_csk(sk)->icsk_ulp_data;
 
    switch (optname) {
       case ULP_LOADSCRIPT: {

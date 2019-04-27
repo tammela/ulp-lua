@@ -75,17 +75,13 @@ static int __pool_del(struct pool *pool, int n)
    struct context *ctx;
    int i;
 
-   BUG_ON(n > pool->size);
-
    for (i = 0; i < n; i++) {
       entry = list_first_entry(&pool->list, struct pool_entry, head);
-      BUG_ON(list_empty(&pool->list));
       ctx = luaU_getenv(entry->L, struct context);
       lua_close(entry->L);
       __pool_list_del(pool, &entry->head);
       kfree(entry);
       kfree(ctx);
-      poolsz--;
    }
 
    return 0;
@@ -225,11 +221,11 @@ struct pool_entry *pool_pop(struct pool *pool, void *data)
       return NULL;
    }
 
-   entry = list_first_entry(&pool_lst, struct pool_entry, head);
+   entry = list_first_entry(&pool->list, struct pool_entry, head);
 #ifdef HAS_TLS
    entry->tc = data;
 #endif
-   __pool_list_del(&entry->head);
+   __pool_list_del(pool, &entry->head);
 
    spin_unlock(&pool->lock);
 
