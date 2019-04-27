@@ -112,9 +112,7 @@ struct pool *pool_init(int size)
 
 void pool_exit(struct pool *pool)
 {
-   //spin_lock(&pool->lock);
    __pool_del(pool, pool->size);
-   //spin_unlock(&pool->lock);
    kfree(pool);
 }
 
@@ -161,11 +159,6 @@ void pool_recycle(struct pool_entry *entry)
 
    spin_lock(&entry->pool->lock);
    __pool_list_add(entry->pool, &entry->head);
-/*
-   if (pool->size > 2 * ULP_POOLSZ) {
-      pool_resize(ULP_POOLSZ);
-   }
-*/
    spin_unlock(&entry->pool->lock);
 }
 
@@ -221,7 +214,6 @@ exit:
 struct pool_entry *pool_pop(struct pool *pool)
 {
    struct pool_entry *entry;
-   //int ret;
 
    spin_lock(&pool->lock);
 

@@ -48,8 +48,8 @@ struct context {
 };
 
 typedef enum {
-   LISTENER = 55,
-   CONNECTION = 77
+   LISTENER = 1,
+   CONNECTION
 } ulp_data_type;
 
 struct ulp_data {
@@ -70,7 +70,7 @@ static inline int sk_set_ulp_data(struct sock *sk, ulp_data_type type, void *dat
    struct ulp_data *ulp_data;
 
    ulp_data = kmalloc(sizeof(struct ulp_data), GFP_KERNEL);
-   if (unlikely(data == NULL))
+   if (unlikely(ulp_data == NULL))
       return -ENOMEM;
 
    ulp_data->type = type;
@@ -97,7 +97,7 @@ static inline void sk_cleanup_ulp_data(struct sock *sk)
    else if (data->type == CONNECTION)
       pool_recycle(data->data.entry);
    else
-      WARN_ON(true);
+      BUG_ON(true);
 
    inet_csk(sk)->icsk_ulp_data = NULL;
    kfree(data);
