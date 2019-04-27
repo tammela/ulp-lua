@@ -8,7 +8,7 @@
  * vmalloc() minimum allocation size is a page.
  * make sure the reallocation is really needed.
  */
-static void *checksize(void *ptr, size_t osize, size_t nsize)
+static inline void *checksize(void *ptr, size_t osize, size_t nsize)
 {
    if (nsize > osize) /* enlarging */
       return PAGE_ALIGN(nsize) > PAGE_ALIGN(osize) ? NULL : ptr;
@@ -53,7 +53,7 @@ void *allocator(void *ud, void *ptr, size_t osize, size_t nsize)
    if (is_vmalloc_addr(ptr))
       return vrealloc(ptr, osize, nsize);
 
-   nptr = krealloc(ptr, nsize, GFP_KERNEL);
+   nptr = nsize > KMALLOC_MAX_SIZE ? NULL : krealloc(ptr, nsize, GFP_KERNEL);
    if (nptr == NULL) /* let's try a virtual reallocation */
       return vrealloc(ptr, osize, nsize);
 
