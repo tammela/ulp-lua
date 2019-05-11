@@ -56,16 +56,16 @@ static inline struct pool_entry *sk_ulp_data(struct sock *sk)
 
 static inline void sk_cleanup_ulp_data(struct sock *sk)
 {
-   struct pool_entry *entry = sk_ulp_data(sk);
+   void *ptr = inet_csk(sk)->icsk_ulp_data;
 
-   if (unlikely(entry == NULL))
+   if (unlikely(ptr == NULL))
       return;
 
    /* listener */
    if (sk->sk_state == TCP_LISTEN)
-      pool_exit(entry->pool);
+      pool_exit((struct pool *)ptr);
    else
-      pool_recycle(entry);
+      pool_recycle((struct pool_entry *)ptr);
 
    inet_csk(sk)->icsk_ulp_data = NULL;
 }
