@@ -39,7 +39,6 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 
    entry = pool_pop(pool, inet_csk(reqsk)->icsk_ulp_data);
    if (unlikely(entry == NULL)) {
-      pp_warn("pool is empty?");
       inet_csk(reqsk)->icsk_ulp_data = NULL;
       goto out;
    }
