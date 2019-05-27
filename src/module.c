@@ -45,7 +45,7 @@ static int sk_init(struct sock *sk)
 {
    struct pool *pool;
 
-   if (sk->sk_family != AF_INET)
+   if (sk->sk_family != AF_INET && sk->sk_family != AF_INET6)
       return -ENOTSUPP;
 
    /* save the original state */
