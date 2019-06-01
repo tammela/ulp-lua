@@ -24,11 +24,9 @@ struct proto *sys;
 
 static struct proto newprot;
 
-#ifdef HAS_TLS
 /* prefixed addr_ because it's a function address */
 unsigned long addr_tcp_set_ulp;
 unsigned long addr_skb_decrypt;
-#endif
 
 static void register_funcs(struct proto **skp)
 {

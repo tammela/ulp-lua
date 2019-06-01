@@ -3,6 +3,9 @@
 
 struct pool {
    struct list_head list;
+   /* number of elements that assigned to pool */
+   int maxsize;
+   /* number of elements that currently in pool */
    int size;
    spinlock_t lock;
 };
@@ -31,6 +34,10 @@ extern void pool_recycle(struct pool_entry *);
 extern int pool_scatter_script(struct pool *, const char *, size_t);
 
 extern int pool_scatter_entry(struct pool *, const char *, size_t);
+
+extern int pool_setmaxsize(struct pool *, int);
+
+extern int pool_getmaxsize(struct pool *);
 
 extern struct pool_entry *pool_pop(struct pool *, void *);
 

@@ -36,6 +36,12 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
    if (level != SOL_LUA)
       return sys->setsockopt(sk, level, optname, optval, optlen);
 
+   /*
+    * ULP_LOADSCRIPT, ULP_ENTRYPOINT, ULP_POOLSIZE options only valid for LISTENING sockets
+    */
+   if (sk->sk_state != TCP_LISTEN)
+      return -ENOPROTOOPT;
+
    pool = inet_csk(sk)->icsk_ulp_data;
 
    switch (optname) {
@@ -80,6 +86,24 @@ int ulp_setsockopt(struct sock *sk, int level, int optname,
 
          err = pool_scatter_entry(pool, (const char *)entry, optlen);
          vfree(entry);
+         if (unlikely(err))
+            return err;
+
+         break;
+      }
+      case ULP_POOLSIZE: {
+         int val;
+
+         if (!optval || optlen < sizeof(int))
+            return -EINVAL;
+
+         if (get_user(val, (int __user *)optval))
+            return -EFAULT;
+
+         if (val < 1 || val > ULP_MAXPOOLSZ)
+            return -EINVAL;
+
+         err = pool_setmaxsize(pool, val);
          if (unlikely(err))
             return err;
 
