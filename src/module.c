@@ -83,11 +83,17 @@ static struct tcp_ulp_ops ulp_lua_ops __read_mostly = {
 
 static int __init modinit(void)
 {
-   addr_tcp_set_ulp = kallsyms_lookup_name("tcp_set_ulp");
-   addr_skb_decrypt = kallsyms_lookup_name("decrypt_skb");
+
    tcp_register_ulp(&ulp_lua_ops);
 
+#ifdef HAS_TLS
+   addr_tcp_set_ulp = kallsyms_lookup_name("tcp_set_ulp");
+   addr_skb_decrypt = kallsyms_lookup_name("decrypt_skb");
+
    return (addr_tcp_set_ulp || addr_skb_decrypt) ? 0 : -EFAULT;
+#endif
+
+   return 0;
 }
 
 static void __exit modexit(void)

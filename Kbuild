@@ -11,6 +11,6 @@ subdir-ccflags-y := -I${PWD}/${LUNATIK} \
 	-D'MAX=max' \
 	-D'UCHAR_MAX=(255)' \
 	-D'UINT64_MAX=((u64)~0ULL)' \
-	-DHAS_TLS
+#	-DHAS_TLS
 
 obj-y += dependencies/lunatik/ dependencies/luadata/ src/
