@@ -35,8 +35,6 @@ future.
 
 --> *No* Lua API for common socket operations.
 
---> *No* support for IPv6.
-
 --> *No* support for udp.
 
 ## Contributing
