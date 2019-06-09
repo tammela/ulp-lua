@@ -15,6 +15,7 @@
 
 #define ULP_LOADSCRIPT       (1)
 #define ULP_ENTRYPOINT       (2)
+#define ULP_POOLSIZE         (3)
 #define SOL_TCP (6)
 #define SOL_LUA (999)
 
@@ -31,6 +32,7 @@ int main(int argc, char **argv)
    const char *hello = "Hello from server!";
    int listener = socket(AF_INET, SOCK_STREAM, 0);
    int err;
+   int poolsz;
 
    if (argc < 3) {
       print_help();
@@ -81,6 +83,12 @@ int main(int argc, char **argv)
 
    /* setup lua */
    err = setsockopt(listener, SOL_TCP, TCP_ULP, "lua", sizeof("lua"));
+   if (err == -1)
+      raise_err();
+
+   /* set Lua pool size */
+   poolsz = 128;
+   err = setsockopt(listener, SOL_LUA, ULP_POOLSIZE, &poolsz, sizeof(int));
    if (err == -1)
       raise_err();
 

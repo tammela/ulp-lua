@@ -42,6 +42,7 @@
 /* #include <uapi/linux/ulp_lua.h> */
 #define ULP_LOADSCRIPT      (1)
 #define ULP_ENTRYPOINT      (2)
+#define ULP_POOLSIZE        (3)
 
 struct context {
    char entry[ULP_ENTRYSZ];

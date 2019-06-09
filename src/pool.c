@@ -60,6 +60,7 @@ static int __pool_add(struct pool *pool, int n)
       luaL_openlibs(entry->L);
       lua_gc(entry->L, LUA_GCSETPAUSE, ULP_LUAGCPAUSE);
 
+      pool->maxsize++;
       __pool_list_add(pool, &entry->head);
    }
 
@@ -81,6 +82,7 @@ static int __pool_del(struct pool *pool, int n)
 
       lua_close(entry->L);
 
+      pool->maxsize--;
       __pool_list_del(pool, &entry->head);
 
       kfree(entry);
@@ -100,6 +102,7 @@ struct pool *pool_init(int size)
       return NULL;
 
    INIT_LIST_HEAD(&pool->list);
+   pool->maxsize = 0;
    pool->size = 0;
    spin_lock_init(&pool->lock);
 
@@ -116,6 +119,10 @@ struct pool *pool_init(int size)
 void pool_exit(struct pool *pool)
 {
    __pool_del(pool, pool->size);
+
+   /* memory leak */
+   WARN_ON(!(pool->size == 0 && pool->maxsize == 0));
+
    kfree(pool);
 }
 
@@ -193,6 +200,40 @@ int pool_scatter_entry(struct pool *pool, const char *entry, size_t sz)
 exit:
    pool_unlock(pool);
    return err;
+}
+
+int pool_setmaxsize(struct pool *pool, int size)
+{
+   int err = 0;
+
+   if (unlikely(size == pool->maxsize))
+      return 0;
+
+   pool_lock(pool);
+
+   if (size > pool->maxsize)
+      err = __pool_add(pool, size - pool->maxsize);
+
+   /*
+    * We can trim the pool to no more that pool->size elements
+    */
+   if (pool->size >= size)
+      err = __pool_del(pool, pool->maxsize - size);
+
+   /*
+    * User want to set max pool size smaller than free elemens in pool
+    */
+   if (pool->size < size)
+      err = -EINVAL;
+
+   pool_unlock(pool);
+
+   return err;
+}
+
+int pool_getmaxsize(struct pool *pool)
+{
+   return pool->maxsize;
 }
 
 struct pool_entry *pool_pop(struct pool *pool, void *data)
