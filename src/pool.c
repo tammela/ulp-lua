@@ -125,7 +125,9 @@ struct pool *pool_init(int size)
 
 void pool_exit(struct pool *pool)
 {
+   pool_lock(pool);
    __pool_del(pool, pool->size);
+   pool_unlock(pool);
    kfree(pool);
 }
 
