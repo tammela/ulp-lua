@@ -7,9 +7,6 @@
 /* maximum script size in bytes */
 #define ULP_SCRIPTSZ            (8192)
 
-/* initial lua_State pool size */
-#define ULP_POOLSZ              (16)
-
 /* initial Lua's GC pause value */
 #define ULP_LUAGCPAUSE          (100)
 

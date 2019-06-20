@@ -54,10 +54,12 @@ static int sk_init(struct sock *sk)
 
    register_funcs(&sk->sk_prot);
 
-   pool = pool_init(ULP_POOLSZ);
+   /* pool initial size is the listen backlog */
+   pool = pool_init(sk->sk_max_ack_backlog);
    if (pool == NULL)
       return -ENOMEM;
 
+   /* each listener socket contains it's own pool */
    inet_csk(sk)->icsk_ulp_data = pool;
 
    return 0;
@@ -69,7 +71,7 @@ static int ulp_lua_init(struct sock *sk)
     * of the request sockets. we assume that the
     * ulp initializion was done on the listener socket.
     */
-   if (sk->sk_state == TCP_ESTABLISHED)
+   if (sk->sk_state != TCP_LISTEN)
       return -EINVAL;
 
    return sk_init(sk);
