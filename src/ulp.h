@@ -74,7 +74,7 @@ static inline struct context *sk_ulp_ctx(struct sock *sk)
 {
    lua_State *L = sk_ulp_data(sk)->L;
 
-   if (!L)
+   if (L == NULL)
       return NULL;
 
    return luaU_getenv(L, struct context);

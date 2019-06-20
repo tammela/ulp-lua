@@ -15,6 +15,16 @@
 #include "pool.h"
 #include "allocator.h"
 
+void pool_lock(struct pool *pool)
+{
+   spin_lock(&pool->lock);
+}
+
+void pool_unlock(struct pool *pool)
+{
+   spin_unlock(&pool->lock);
+}
+
 static inline void __pool_list_add(struct pool *pool, struct list_head *new)
 {
    list_add(new, &pool->list);
@@ -124,16 +134,6 @@ int pool_empty(struct pool *pool)
    return list_empty(&pool->list);
 }
 
-void pool_lock(struct pool *pool)
-{
-   spin_lock(&pool->lock);
-}
-
-void pool_unlock(struct pool *pool)
-{
-   spin_unlock(&pool->lock);
-}
-
 void pool_recycle(struct pool_entry *entry)
 {
    if (unlikely(entry == NULL))
@@ -203,7 +203,7 @@ struct pool_entry *pool_pop(struct pool *pool, void *data)
 
    if (unlikely(pool_empty(pool))) {
       entry = NULL;
-      goto exit;
+      goto unlock;
    }
 
    entry = list_first_entry(&pool->list, struct pool_entry, head);
@@ -212,7 +212,7 @@ struct pool_entry *pool_pop(struct pool *pool, void *data)
 #endif
    __pool_list_del(pool, &entry->head);
 
-exit:
+unlock:
    pool_unlock(pool);
    return entry;
 }

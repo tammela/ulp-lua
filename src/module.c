@@ -89,11 +89,10 @@ static int __init modinit(void)
 #ifdef HAS_TLS
    addr_tcp_set_ulp = kallsyms_lookup_name("tcp_set_ulp");
    addr_skb_decrypt = kallsyms_lookup_name("decrypt_skb");
-
    return (addr_tcp_set_ulp || addr_skb_decrypt) ? 0 : -EFAULT;
-#endif
-
+#else
    return 0;
+#endif
 }
 
 static void __exit modexit(void)

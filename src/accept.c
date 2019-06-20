@@ -12,13 +12,12 @@
 
 struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 {
-   int ret = 0;
-   struct pool_entry *entry;
-   struct pool *pool = inet_csk(sk)->icsk_ulp_data;
-   struct sock *reqsk = sys->accept(sk, flags, err, kern);
 #ifdef HAS_TLS
    const struct tcp_ulp_ops *ops;
 #endif
+   struct pool_entry *entry;
+   struct pool *pool = inet_csk(sk)->icsk_ulp_data;
+   struct sock *reqsk = sys->accept(sk, flags, err, kern);
 
    if (reqsk == NULL)
       goto out;
@@ -38,12 +37,11 @@ struct sock *ulp_accept(struct sock *sk, int flags, int *err, bool kern)
 #endif
 
    entry = pool_pop(pool, inet_csk(reqsk)->icsk_ulp_data);
-   if (unlikely(entry == NULL)) {
-      inet_csk(reqsk)->icsk_ulp_data = NULL;
+   if (unlikely(entry == NULL))
       goto out;
-   }
 
    inet_csk(reqsk)->icsk_ulp_data = entry;
+
 out:
    return reqsk;
 }
